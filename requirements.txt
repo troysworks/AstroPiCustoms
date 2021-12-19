@@ -1,6 +1,8 @@
-uvicorn
 fastapi
 pydantic
 astropy
 starlette
+uvicorn
 pyserial
+RPi.GPIO
+numpy

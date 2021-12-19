@@ -29,7 +29,7 @@
       <paths name="pi@astropidob10:22">
         <serverdata>
           <mappings>
-            <mapping deploy="/home/pi/AstroPiCustoms" local="$PROJECT_DIR$" web="/" />
+            <mapping deploy="AstroPiCustoms" local="$PROJECT_DIR$" web="/" />
           </mappings>
           <excludedPaths>
             <excludedPath local="true" path="$PROJECT_DIR$/.idea" />
