@@ -38,9 +38,4 @@ python -m pip install --upgrade pip
 echo "Installing requirements"
 pip install -r requirements.txt
 
-if [ -d "src" ]; then
-  echo "Cloning Git Repo"
-  rm -rf venv
-fi
-
 echo "Setup complete"
