@@ -12,7 +12,7 @@ sudo apt install git wget python python3-venv -y
 CUR_PATH=${PWD##*/}
 
 if [ $APP_NAME != "$CUR_PATH" ]; then
-  if [ -d $APP_NAME ]; then
+  if [ ! -d $APP_NAME ]; then
     echo "Cloning git repo"
     git clone https://github.com/troysworks/AstroPiCustoms.git
   fi
