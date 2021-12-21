@@ -40,6 +40,6 @@ pip install -r requirements.txt
 
 echo "Installing AstroPiCustoms systemctl Service"
 sudo cp astropicustoms.service /etc/systemd/system/astropicustoms.service
-systemctl enable astropicustoms.service
+sudo systemctl enable astropicustoms.service
 
 echo "Setup complete"
