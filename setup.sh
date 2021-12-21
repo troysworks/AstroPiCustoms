@@ -7,7 +7,7 @@ sudo apt update -y
 sudo apt upgrade -y
 
 echo "installing wget"
-sudo apt install git wget python python3-venv -y
+sudo apt install git wget python3-venv libatlas-base-dev -y
 
 CUR_PATH=${PWD##*/}
 
