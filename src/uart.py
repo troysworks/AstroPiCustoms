@@ -6,7 +6,7 @@ import time
 
 from src.models import PythonToDriveData, DriveToPythonData, TrackerData
 
-SERIAL_PORT = '/dev/ttyAMA0'  # ttyS0 for rpi 4, ttyAMA0 for rpi3b+
+SERIAL_PORT = '/dev/ttyS0'
 SERIAL_BAUD = 9600
 SEND_INTERVAL = 1  # seconds
 
