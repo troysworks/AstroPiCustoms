@@ -1,6 +1,5 @@
 import logging
 import threading
-import time
 from datetime import datetime
 
 from astropy import units as u
@@ -71,10 +70,10 @@ async def put_convert(celestial: CelestialObjectGroup, key: str):
         data = ""
         tracker_data.base.ra_hour_decimal = tracker_data.base.custom_ra_hour + \
                                             (tracker_data.base.custom_ra_min * 0.01666) + (
-                                                        tracker_data.base.custom_ra_sec * 0.0002778)
+                                                    tracker_data.base.custom_ra_sec * 0.0002778)
         tracker_data.base.dec_deg_decimal = tracker_data.base.custom_dec_deg + \
                                             (tracker_data.base.custom_dec_min * 0.01666) + (
-                                                        tracker_data.base.custom_dec_sec * 0.0002778)
+                                                    tracker_data.base.custom_dec_sec * 0.0002778)
         sky_coord = SkyCoord(ra=tracker_data.base.ra_hour_decimal * u.hour,
                              dec=tracker_data.base.dec_deg_decimal * u.degree, frame='icrs')
 
@@ -104,33 +103,23 @@ async def put_convert(celestial: CelestialObjectGroup, key: str):
         tracker_data.base.custom_dec_min = minutes
         tracker_data.base.custom_dec_sec = seconds
         tracker_data.base.calculating = ""
-        return calculate()
+        if tracker_data.sky_coord:
+            tracker_data.base.calculate(tracker_data.sky_coord, tracker_data.earth_location)
+        return tracker_data.base
 
     raise status.HTTP_404_NOT_FOUND
 
 
 @app.get('/update_tracker', response_model=PythonToJavascriptData)
 async def get_update_tracker():
-    return calculate()
+    return tracker_data.base
 
 
 @app.post('/update_tracker', response_model=PythonToJavascriptData)
 async def post_update_tracker(results: PythonToJavascriptData = None):
     update_tracker_data(results)
-    return calculate()
-
-
-def calculate() -> PythonToJavascriptData:
     if tracker_data.sky_coord:
         tracker_data.base.calculate(tracker_data.sky_coord, tracker_data.earth_location)
-
-        # if uart_server.last_send <= time.time() + uart_server.send_interval:
-        uart_server.send(tracker_data.base.az_ra_steps_sp, tracker_data.base.alt_dec_steps_sp,
-                         tracker_data.base.control_mode)
-
-    else:
-        logging.debug('Skipping calculate')
-
     return tracker_data.base
 
 

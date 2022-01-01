@@ -3,24 +3,25 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional
 
-from pydantic import BaseModel
-
-from astropy.coordinates import SkyCoord, EarthLocation, AltAz,  Angle
 import astropy.units as u
+from astropy.coordinates import SkyCoord, EarthLocation, AltAz, Angle
 from astropy.time import Time
+from pydantic import BaseModel
 
 
 class PythonToDriveData(BaseModel):
     az_ra_steps_sp: Optional[float]
     alt_dec_steps_sp: Optional[float]
-    control_mode: Optional[int] = 0
+    control_mode: Optional[int]
 
 
 class DriveToPythonData(BaseModel):
-    az_steps: Optional[float]
-    az_steps_adder: Optional[float]
     alt_steps: Optional[float]
     alt_steps_adder: Optional[float]
+    alt_diff: Optional[float]
+    az_steps: Optional[float]
+    az_steps_adder: Optional[float]
+    az_diff: Optional[float]
     drive_status: Optional[str]
 
 
@@ -46,12 +47,14 @@ class PythonToJavascriptData(PythonToDriveData, DriveToPythonData):
     custom_dec_min: Optional[int]
     custom_dec_sec: Optional[float]
 
-    local_sidereal: Optional[str]
-    mount_select: Optional[int] = 2
-    ra_hour_decimal: Optional[float] = 0.0
-    dec_deg_decimal: Optional[float] = 0.0
+    local_sidereal: Optional[float]
+    mount_select: Optional[int]
+    ra_hour_decimal: Optional[float]
+    dec_deg_decimal: Optional[float]
     object_info: Optional[str]
     calculating: Optional[str]
+
+    running: Optional[bool]
 
     def calculate(self, sky_coord: SkyCoord, earth_location: EarthLocation):
         self.calculate_alt_az(sky_coord, earth_location)  # 1st
@@ -73,13 +76,15 @@ class PythonToJavascriptData(PythonToDriveData, DriveToPythonData):
 
         sidereal = Time(datetime.utcnow(), scale='utc', location=earth_location).sidereal_time('mean')
         self.local_sidereal = float(format("%.3f" % Angle(sidereal).hourangle))
+        self.ra_hour_decimal = Angle(sky_coord.ra).hour
+        self.dec_deg_decimal = Angle(sky_coord.dec).degree
 
     def calculate_drive_counts(self, sky_coord: SkyCoord, earth_location: EarthLocation):
         transform = sky_coord.transform_to(AltAz(obstime=Time(datetime.utcnow(), scale='utc'), location=earth_location))
         altitude_deg = transform.alt
         azimuth_deg = transform.az
-        ra_decimal_hrs = self.ra_hour_decimal  # Angle(self.sky_coord_ra).value
-        dec_decimal_deg = self.dec_deg_decimal  # Angle(self.sky_coord_dec).degree
+        ra_decimal_hrs = self.ra_hour_decimal  # Angle(self.ra_hour_decimal).value
+        dec_decimal_deg = self.dec_deg_decimal  # Angle(self.dec_deg_decimal).degree
 
         quads = [0, 0, 0, 0]
         q24 = 0
@@ -113,7 +118,19 @@ class PythonToJavascriptData(PythonToDriveData, DriveToPythonData):
         if q == 3:  # SE
             q24 = 2
 
-        if self.mount_select < 2:
+        if self.mount_select == 1:  # Fork Mount
+            if self.local_sidereal <= ra_decimal_hrs:
+                hrs_ra = ra_decimal_hrs - self.local_sidereal
+                ra_count = hrs_ra * 15 / self.ra_or_az_pulse_per_deg
+            else:
+                hrs_ra = (24 - self.local_sidereal) + ra_decimal_hrs
+                ra_count = hrs_ra * 15 / self.ra_or_az_pulse_per_deg
+
+            dec_count = (dec_decimal_deg - 90) / self.dec_or_alt_pulse_per_deg
+            self.az_ra_steps_sp = float("{:.3f}".format(ra_count))
+            self.alt_dec_steps_sp = float("{:.3f}".format(dec_count))
+
+        if self.mount_select == 0:  # EQ
             # check quad 0  NE
             if (quads[1] <= ra_decimal_hrs <= quads[0]) or (
                     q24 == 0 and (ra_decimal_hrs <= quads[0] or ra_decimal_hrs >= quads[1])):

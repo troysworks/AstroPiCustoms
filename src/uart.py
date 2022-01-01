@@ -1,8 +1,8 @@
 import logging
+import time
 from typing import Optional
 
 from serial import Serial
-import time
 
 from src.models import PythonToDriveData, DriveToPythonData, TrackerData
 
@@ -14,7 +14,6 @@ SEND_INTERVAL = 1  # seconds
 class UARTServer:
     def __init__(self, tracker_data: TrackerData, port: str = None, baud: int = None, send_interval: int = None):
         self.serial = Serial(port or SERIAL_PORT, baudrate=baud or SERIAL_BAUD)
-        self.is_running = False
         self.send_interval = send_interval or SEND_INTERVAL
         self.last_send: float = time.time()
         self.tracker_data = tracker_data
@@ -47,9 +46,11 @@ class UARTServer:
                     model = DriveToPythonData(**dict(
                         alt_steps=columns[0],
                         alt_steps_adder=columns[1],
-                        az_steps=columns[2],
-                        az_steps_adder=columns[3],
-                        drive_status=columns[4]
+                        alt_diff=columns[2],
+                        az_steps=columns[3],
+                        az_steps_adder=columns[4],
+                        az_diff=columns[5],
+                        drive_status=columns[6]
                     ))
 
                     logging.debug(f'UART Model: {model}')
@@ -59,9 +60,9 @@ class UARTServer:
 
     def background_task(self):
         logging.debug('Starting UART Server')
-        self.is_running = True
+        self.tracker_data.base.running = True
 
-        while self.is_running:
+        while self.tracker_data.base.running:
             data = self.read()
             if data:
                 # Update tracker_data from data [DriveToPythonData]
@@ -69,6 +70,15 @@ class UARTServer:
                     if hasattr(self.tracker_data.base, k):
                         setattr(self.tracker_data.base, k, v)
 
-            time.sleep(0.01)
+            if self.tracker_data.sky_coord:
+                self.tracker_data.base.calculate(self.tracker_data.sky_coord, self.tracker_data.earth_location)
+
+                self.send(
+                    self.tracker_data.base.az_ra_steps_sp,
+                    self.tracker_data.base.alt_dec_steps_sp,
+                    self.tracker_data.base.control_mode
+                )
+
+            time.sleep(0.1)
 
         logging.debug('Exited UART Server')

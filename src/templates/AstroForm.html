@@ -1,25 +1,46 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>AstroPiCustoms</title>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+    <title>AstroPiCustoms</title>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1" name="viewport">
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
     <style>
-    div {width:620px;border: 4px solid black;}
-    body {background-color: rgba(200, 10, 10, 0.9);}
+        div {
+            width: 620px;
+            border: 4px solid black;
+        }
+
+        body {
+            background-color: rgba(200, 10, 10, 0.9);
+        }
     </style>
 </head>
 
-<script language="JavaScript" TYPE="text/javascript">
+<script TYPE="text/javascript">
 
-    const loopMilliseconds = 100;
+    const loopMilliseconds = 1000;
     let loopInterval = null;
     let alreadyRunning = false;
 
-    let tracker_data = {};
+    let train_stopping = false;
+
+    let tracker_data = {
+        running: false,
+        drive_status: ""
+    };
+
+    function on_load() {
+        getJson('/update_tracker');
+    }
+
+    function start_loop() {
+        if (!loopInterval) {
+            loopInterval = setInterval(getUpdateFromTracker, loopMilliseconds);
+        }
+    }
 
     function postJson(url, data) {
         const xmlHttpRequest = new XMLHttpRequest();
@@ -36,61 +57,70 @@
     }
 
     function getJson(url) {
-        const xmlHttpRequest = new XMLHttpRequest();
+        if (!alreadyRunning) {
+            alreadyRunning = true;
 
-        let element = null;
+            const xmlHttpRequest = new XMLHttpRequest();
 
-        xmlHttpRequest.open("GET", url);  // , true
-        xmlHttpRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-        xmlHttpRequest.responseType = 'json';
-        xmlHttpRequest.onreadystatechange = function () {
-            if (xmlHttpRequest.readyState === 4 && xmlHttpRequest.status === 200) {
-                for (let key in xmlHttpRequest.response) {
-                    element = document.getElementById(key);
+            let element = null;
 
-                    if (element) {
-                        element.value = xmlHttpRequest.response[key];
+            xmlHttpRequest.open("GET", url);  // , true
+            xmlHttpRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+            xmlHttpRequest.responseType = 'json';
+            xmlHttpRequest.onreadystatechange = function () {
+                if (xmlHttpRequest.readyState === 4 && xmlHttpRequest.status === 200) {
+                    for (let key in xmlHttpRequest.response) {
+                        element = document.getElementById(key);
+
+                        if (element) {
+                            element.value = xmlHttpRequest.response[key];
+                        }
                     }
+
+                    tracker_data = xmlHttpRequest.response;
+                    update_tracker_form(xmlHttpRequest.response);
+                    alreadyRunning = false;
                 }
-                update_tracker_form(xmlHttpRequest.response);
-                alreadyRunning = false;
-            }
-        };
+            };
 
-        xmlHttpRequest.send();
-
-    }
-
-
-    function update_tracker_data() {
-        document.querySelectorAll(".json").forEach(function(item) {
-            tracker_data[item.id] = item.value;
-        });
+            xmlHttpRequest.send();
+        }
     }
 
     function update_tracker_form(data) {
-        document.querySelectorAll(".json").forEach(function(item) {
+        document.querySelectorAll(".json").forEach(function (item) {
             if (item.id in data) {
                 item.value = data[item.id];
             }
         });
 
-        document.querySelectorAll(".label").forEach(function(item) {
+        document.querySelectorAll(".label").forEach(function (item) {
             if (item.id in data) {
                 item.innerHTML = data[item.id];
+            }
+        });
+
+        document.querySelectorAll(".checked").forEach(function (item) {
+            if (item.name in data) {
+                item.checked = item.id === item.name + data[item.name];
             }
         });
 
         check_alt("altitude_deg");
         check_alt("altitude_min");
         check_alt("altitude_sec");
+
+        if (tracker_data.running && !loopInterval) {
+            start_loop();
+        }
+
+        if (train_stopping && tracker_data.drive_status && tracker_data.drive_status.toUpperCase().includes('STOP')) {
+            stop_loop()
+        }
     }
 
     function getUpdateFromTracker() {
-        if (!alreadyRunning) {
-            alreadyRunning = true;
-            getJson('/update_tracker');
-        }
+        getJson('/update_tracker');
     }
 
     function goto_solar_system() {
@@ -126,40 +156,60 @@
     function goto_custom() {
         tracker_data.calculating = "Calculating";
         document.getElementById("calculating").innerHTML = "Calculating";
-        postJson("/update_tracker", {
-            'calculating': tracker_data.calculating
-        });
+        tracker_data.custom_ra_hour = document.getElementById("custom_ra_hour").value
+        tracker_data.custom_ra_min = document.getElementById("custom_ra_min").value
+        tracker_data.custom_ra_sec = document.getElementById("custom_ra_sec").value
+        tracker_data.custom_dec_deg = document.getElementById("custom_dec_deg").value
+        tracker_data.custom_dec_min = document.getElementById("custom_dec_min").value
+        tracker_data.custom_dec_sec = document.getElementById("custom_ra_hour").value
+
+        postJson("/update_tracker", {'calculating': tracker_data.calculating});
+        postJson("/update_tracker", {'custom_ra_hour': tracker_data.custom_ra_hour});
+        postJson("/update_tracker", {'custom_ra_min': tracker_data.custom_ra_min});
+        postJson("/update_tracker", {'custom_ra_sec': tracker_data.custom_ra_sec});
+        postJson("/update_tracker", {'custom_dec_deg': tracker_data.custom_dec_deg});
+        postJson("/update_tracker", {'custom_dec_min': tracker_data.custom_dec_min});
+        postJson("/update_tracker", {'custom_dec_sec': tracker_data.custom_dec_sec});
         getJson('/convert/custom/custom');
     }
 
     function tracker() {
-        if (tracker_data.control_mode == 1 | tracker_data.control_mode > 2 ) {
+        if (tracker_data.control_mode === 1 || tracker_data.control_mode > 2) {
             tracker_data.control_mode = 2;
-            document.getElementById("status_label").textContent = "Running";
-            loopInterval = setInterval(getUpdateFromTracker, loopMilliseconds);
-            alreadyRunning = true;
+
+            start_loop()
+
             postJson("/update_tracker", {
                 'control_mode': tracker_data.control_mode
             });
-            alreadyRunning = false;
-        }else{
-            document.getElementById("status_label").textContent = "Stopped";
-            clearInterval(loopInterval);
+        } else {
+            train_stopping = true;
+
             if (tracker_data.control_mode > 0) {
                 tracker_data.control_mode = 1;
             }
+
             postJson("/update_tracker", {
                 'control_mode': tracker_data.control_mode
             });
         }
     }
 
+    function stop_loop() {
+        // document.getElementById("status_label").textContent = "Stopped";
+
+        clearInterval(loopInterval);
+
+        loopInterval = null;
+
+        train_stopping = false;
+    }
 
     function north_align() {
-        if(tracker_data.control_mode > 1){
+        if (tracker_data.control_mode > 1) {
             document.getElementById("north_aligned").innerHTML = "Not";
             tracker_data.control_mode = 0;
-        }else{
+        } else {
             document.getElementById("north_aligned").innerHTML = "Aligned";
             tracker_data.control_mode = 1;
         }
@@ -170,27 +220,27 @@
 
     }
 
-
     function mount_select(value) {
         tracker_data.mount_select = value;
+
         postJson("/update_tracker", {
             'mount_select': tracker_data.mount_select
         });
     }
 
-
     function home_pos() {
         tracker_data.control_mode = 3;
         // drive sets sp's to 0 and moves to home pos
+
         postJson("/update_tracker", {
             'control_mode': tracker_data.control_mode
         });
-        document.getElementById("status_label").textContent = "Home Pos";
     }
+
     function check_alt(id) {
-        if(document.getElementById(id).value < 0 ){
+        if (document.getElementById(id).value < 0) {
             document.getElementById(id).style.backgroundColor = "rgb(140,64,54)";
-        }else{
+        } else {
             document.getElementById(id).style.backgroundColor = "rgb(255,255,255)";
 
         }
@@ -198,126 +248,134 @@
 
 </script>
 
-<body>
+<body onload="on_load()">
 
 <div class="container">
     <label style="font-size:18px;">Astropi Customs</label>
     <br>
 
-    <label style="font-size:16px;" id="north_aligned">Not</label>
-    <button style="font-size:16px;" type="button" onclick="north_align()">North Aligned</button>
-    <button style="font-size:16px;" type="button" id="stop" onclick="tracker()">Tracking</button>
-    <label id="status_label" style="font-size:16px;">Stopped</label>
+    <label id="north_aligned" style="font-size:16px;">Not</label>
+    <button onclick="north_align()" style="font-size:16px;" type="button">North Aligned</button>
+    <button id="stop" onclick="tracker()" style="font-size:16px;" type="button">Tracking</button>
+    Status:<label class="label" id="drive_status" style="font-size:12px;">0</label>
+    Mode:<label class="label" id="control_mode" style="font-size:12px;">0</label>
+
     <br>
-     <label style="font-size:16px;">Site</label>
-    Latitude:<label style="font-size:12px;" class="label" id="latitude">0.0</label>
-    Longitude:<label style="font-size:12px;" class="label" id="longitude">0.0</label>
-    Sea_level:<label style="font-size:12px;" class="label" id="sea_level">0.0</label>
-    Local Sidereal:<label style="font-size:12px;" class="label" id="local_sidereal">0.0</label>
+    <label style="font-size:16px;">Site</label>
+    Latitude:<label class="label" id="latitude" style="font-size:12px;">0.0</label>
+    Longitude:<label class="label" id="longitude" style="font-size:12px;">0.0</label>
+    Sea_level:<label class="label" id="sea_level" style="font-size:12px;">0.0</label>
+    Local Sidereal:<label class="label" id="local_sidereal" style="font-size:12px;">0.0</label>
     <br>
 
-        <label style="font-size:18px;">Solar System:</label>
-        <select class="form-select" aria-label="Moon" id="select_solar_system" style="font-size:18px;" >
-            {% for value, desc in solar_system.items() %}
-                <option value="{{ val }}" title="{{ desc }}">{{ value }}</option>
-            {% endfor %}
-        </select>
-        <button style="font-size:16px;" type="button" id="goto_solar_system" onclick="goto_solar_system()">Calc</button>
+    <label style="font-size:18px;">Solar System:</label>
+    <select aria-label="Moon" class="form-select" id="select_solar_system" style="font-size:18px;">
+        {% for value, desc in solar_system.items() %}
+        <option title="{{ desc }}" value="{{ val }}">{{ value }}</option>
+        {% endfor %}
+    </select>
+    <button id="goto_solar_system" onclick="goto_solar_system()" style="font-size:16px;" type="button">Calc</button>
 
-        <label style="font-size:16px;">NGC:</label>
-        <select class="form-select" aria-label="NGC1" id="select_ngc" style="font-size:18px;">
-            {% for value, desc in ngc.items() %}
-                <option value="{{ val }}" title="{{ desc }}">{{ value }}</option>
-            {% endfor %}
-        </select>
-        <button style="font-size:16px;" type="button" id="goto_ngc" onclick="goto_ngc()" >Calc</button>
-        <br>
-        <label style="font-size:16px;">Named Star:</label>
-        <select class="form-select" aria-label="Vega" id="select_star" style="font-size:18px;">
-            {% for value, desc in star.items() %}
-                <option value="{{ val }}" title="{{ desc }}">{{ value }}</option>
-            {% endfor %}
-        </select>
-        <button style="font-size:16px;" type="button" id="goto_star" onclick="goto_star()" >Calc</button>
-        <br>
-
-        <label style="font-size:18px;">Custom</label>
-
-        <label style="font-size:18px;">Ra(H):</label>
-        <input style=" width: 60px;font-size:16px;" min="0" max="90" type="number" value="12"  class="json" id="custom_ra_hour"
-               placeholder="40"
-               name="custom_ra_hour">
-        M:
-        <input style=" width: 60px;font-size:16px;" min="0" max="60" type="number"  value="0" class="json" id="custom_ra_min"
-                placeholder="00"
-               name="custom_ra_min">
-        S:
-        <input style=" width: 60px;font-size:16px;" min="0" max="60" type="number"  value="0" class="json" id="custom_ra_sec"
-               placeholder="00"
-               name="custom_ra_sec">
-        <br>
-
-        <label style="font-size:16px;">Dec(D):</label>
-        <input style=" width: 60px;font-size:16px;" min="0" max="360" type="number" class="json" value="20" id="custom_dec_deg" placeholder="35"
-               name="custom_dec_deg">
-        M:
-        <input style=" width: 60px;font-size:16px;" min="0" max="60" type="number" class="json" value="0" id="custom_dec_min" placeholder="00"
-               name="custom_dec_min">
-        S:
-        <input style=" width: 60px;font-size:16px;" min="0" max="60" type="number" class="json" value="0" id="custom_dec_sec" placeholder="00"
-               name="custom_dec_sec">
-
-        <button style="font-size:16px;" type="button" id="goto_custom" onclick="goto_custom()" >Calc</button>
-        <br>
-        <label style="font-size:16px;">Object Info:</label>
-        <label style="font-size:16px;" class="label" id="object_info">Object Info</label>
-        <label style="font-size:20px; background: chocolate" class="label" id="calculating"></label>
-        <br>
-        <label style="font-size:16px;">Control</label>
-        <label style="font-size:16px;">Az(D):</label>
-        <input style=" width: 50px;font-size:12px;" min="0" max="360" type="number" class="json" value="0" id="azimuth_deg" placeholder="00"
-               name="azimuth_deg">
-        M:
-        <input style=" width: 50px;font-size:12px;" min="0" max="60" type="number" class="json" value="0" id="azimuth_min" placeholder="00"
-               name="azimuth_min">
-        S:
-        <input style=" width: 50px;font-size:12px;" min="0" max="60" type="number" class="json" value="0" id="azimuth_sec" placeholder="00"
-               name="azimuth_sec">
-        <br>
-
-        <label style="font-size:16px;">Alt(D):</label>
-        <input style=" width: 50px;font-size:12px;" min="-5" max="90" type="number" value="0"  class="json" id="altitude_deg"
-               placeholder="0"
-               name="altitude_deg">
-        M:
-        <input style=" width: 50px;font-size:12px;" min="-5" max="60" type="number"  value="0" class="json" id="altitude_min"
-                placeholder="0"
-               name="altitude_min">
-        S:
-        <input style=" width: 50px;font-size:12px;" min="-5" max="60" type="number"  value="0" class="json" id="altitude_sec"
-               placeholder="0"
-               name="altitude_sec">
-
-        <br>
-        <button style="font-size:16px;" type="button" id="home_pos" onclick="home_pos()">Home Position</button>
-        <input type="radio" name="mount" id="eq_mount" onclick="mount_select(0)" value = 0 > EQ
-        <input type="radio" name="mount" id="eq_fork_mount" onclick="mount_select(1)" value = 1 > Fork
-        <input type="radio" name="mount" id="alt_az_mount" onclick="mount_select(2)" value = 2 checked> Alt Az
+    <label style="font-size:16px;">NGC:</label>
+    <select aria-label="NGC1" class="form-select" id="select_ngc" style="font-size:18px;">
+        {% for value, desc in ngc.items() %}
+        <option title="{{ desc }}" value="{{ val }}">{{ value }}</option>
+        {% endfor %}
+    </select>
+    <button id="goto_ngc" onclick="goto_ngc()" style="font-size:16px;" type="button">Calc</button>
     <br>
-    Az deg/cnt:<label style="font-size:12px;" class="label" id="ra_or_az_pulse_per_deg">0.0</label>
-    Alt deg/cnt:<label style="font-size:12px;" class="label" id="dec_or_alt_pulse_per_deg">0.0</label>
+    <label style="font-size:16px;">Named Star:</label>
+    <select aria-label="Vega" class="form-select" id="select_star" style="font-size:18px;">
+        {% for value, desc in star.items() %}
+        <option title="{{ desc }}" value="{{ val }}">{{ value }}</option>
+        {% endfor %}
+    </select>
+    <button id="goto_star" onclick="goto_star()" style="font-size:16px;" type="button">Calc</button>
+    <br>
+
+    <label style="font-size:18px;">Custom</label>
+
+    <label for="custom_ra_hour" style="font-size:18px;">Ra(H):</label>
+    <input class="json" id="custom_ra_hour" max="90" min="0" name="custom_ra_hour" placeholder="40"
+           style=" width: 60px;font-size:16px;"
+           type="number"
+           value="12">
+    M:
+    <input class="json" id="custom_ra_min" max="60" min="0" name="custom_ra_min" placeholder="00" style=" width: 60px;font-size:16px;"
+           type="number"
+           value="0">
+    S:
+    <input class="json" id="custom_ra_sec" max="60" min="0" name="custom_ra_sec" placeholder="00" style=" width: 60px;font-size:16px;"
+           type="number"
+           value="0">
+    <br>
+
+    <label style="font-size:16px;">Dec(D):</label>
+    <input class="json" id="custom_dec_deg" max="360" min="0" name="custom_dec_deg" placeholder="35"
+           style=" width: 60px;font-size:16px;" type="number"
+           value="20">
+    M:
+    <input class="json" id="custom_dec_min" max="60" min="0" name="custom_dec_min" placeholder="00"
+           style=" width: 60px;font-size:16px;" type="number"
+           value="0">
+    S:
+    <input class="json" id="custom_dec_sec" max="60" min="0" name="custom_dec_sec" placeholder="00"
+           style=" width: 60px;font-size:16px;" type="number"
+           value="0">
+
+    <button id="goto_custom" onclick="goto_custom()" style="font-size:16px;" type="button">Calc</button>
+    <br>
+    <label style="font-size:16px;">Object Info:</label>
+    <label class="label" id="object_info" style="font-size:16px;">Object Info</label>
+    <label class="label" id="calculating" style="font-size:20px; background: chocolate"></label>
+    <br>
+    <label style="font-size:16px;">Control</label>
+    <label style="font-size:16px;">Az(D):</label>
+    <input class="json" id="azimuth_deg" max="360" min="0" name="azimuth_deg" placeholder="00" style=" width: 50px;font-size:12px;"
+           type="number"
+           value="0">
+    M:
+    <input class="json" id="azimuth_min" max="60" min="0" name="azimuth_min" placeholder="00" style=" width: 50px;font-size:12px;"
+           type="number"
+           value="0">
+    S:
+    <input class="json" id="azimuth_sec" max="60" min="0" name="azimuth_sec" placeholder="00" style=" width: 50px;font-size:12px;"
+           type="number"
+           value="0">
+    <br>
+
+    <label style="font-size:16px;">Alt(D):</label>
+    <input class="json" id="altitude_deg" max="90" min="-5" name="altitude_deg" placeholder="0" style=" width: 50px;font-size:12px;"
+           type="number"
+           value="0">
+    M:
+    <input class="json" id="altitude_min" max="60" min="-5" name="altitude_min" placeholder="0" style=" width: 50px;font-size:12px;"
+           type="number"
+           value="0">
+    S:
+    <input class="json" id="altitude_sec" max="60" min="-5" name="altitude_sec" placeholder="0" style=" width: 50px;font-size:12px;"
+           type="number"
+           value="0">
+
+    <br>
+    <button id="home_pos" onclick="home_pos()" style="font-size:16px;" type="button">Home Position</button>
+    <input checked class="checked" id="mount_select0" name="mount_select" onclick="mount_select(0)" type="radio"> EQ
+    <input class="checked" id="mount_select1" name="mount_select" onclick="mount_select(1)" type="radio"> Fork
+    <input class="checked" id="mount_select2" name="mount_select" onclick="mount_select(2)" type="radio"> Alt Az
+    <br>
+    Az deg/cnt:<label class="label" id="ra_or_az_pulse_per_deg" style="font-size:12px;">0.0</label>
+    Alt deg/cnt:<label class="label" id="dec_or_alt_pulse_per_deg" style="font-size:12px;">0.0</label>
     <br>
 
     <label style="font-size:16px;">Drive Position</label>
-
-    Az:<label style="font-size:12px;" class="label" id="az_steps">0.0</label>
-    Alt:<label style="font-size:12px;" class="label" id="alt_steps">0.0</label>
-
-    Alt-adder:<label style="font-size:12px;" class="label" id="alt_steps_adder">0.0</label>
-    Az-adder:<label style="font-size:12px;" class="label" id="az_steps_adder">0.0</label>
+    Az:<label class="label" id="az_steps" style="font-size:12px;">0.0</label>
+    Az-Err:<label class="label" id="az_diff" style="font-size:12px;">0.0</label>
+    Az-adder:<label class="label" id="az_steps_adder" style="font-size:12px;">0.0</label>
     <br>
-    Mode:<label style="font-size:12px;" class="label" id="control_mode">0</label>
-    Status:<label style="font-size:12px;" class="label" id="drive_status">0</label>
+    Alt:<label class="label" id="alt_steps" style="font-size:12px;">0.0</label>
+    Alt-Err:<label class="label" id="alt_diff" style="font-size:12px;">0.0</label>
+    Alt-adder:<label class="label" id="alt_steps_adder" style="font-size:12px;">0.0</label>
+
 
 </div>
 

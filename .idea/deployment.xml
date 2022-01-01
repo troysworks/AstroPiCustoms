@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" autoUpload="Always" serverName="pi@astropidob10:22" remoteFilesAllowedToDisappearOnAutoupload="false">
+  <component name="PublishConfigData" serverName="pi@astropidob10:22" remoteFilesAllowedToDisappearOnAutoupload="false">
     <serverData>
       <paths name="astropidob12">
         <serverdata>
@@ -11,6 +11,18 @@
             <excludedPath local="true" path="$PROJECT_DIR$/objectlists" />
             <excludedPath local="true" path="$PROJECT_DIR$/venv" />
             <excludedPath local="true" path="$PROJECT_DIR$/.idea" />
+          </excludedPaths>
+        </serverdata>
+      </paths>
+      <paths name="pi@astropi">
+        <serverdata>
+          <mappings>
+            <mapping deploy="AstroPiCustoms" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+          <excludedPaths>
+            <excludedPath local="true" path="$PROJECT_DIR$/.idea" />
+            <excludedPath local="true" path="$PROJECT_DIR$/venv" />
+            <excludedPath local="true" path="$PROJECT_DIR$/objectlists" />
           </excludedPaths>
         </serverdata>
       </paths>
@@ -38,7 +50,13 @@
           </excludedPaths>
         </serverdata>
       </paths>
+      <paths name="pi@cardbot:22">
+        <serverdata>
+          <mappings>
+            <mapping local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
     </serverData>
-    <option name="myAutoUpload" value="ALWAYS" />
   </component>
 </project>
