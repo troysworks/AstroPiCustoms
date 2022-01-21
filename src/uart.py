@@ -8,7 +8,7 @@ from src.models import PythonToDriveData, DriveToPythonData, TrackerData
 
 SERIAL_PORT = '/dev/ttyS0'
 SERIAL_BAUD = 9600
-SEND_INTERVAL = 1  # seconds
+SEND_INTERVAL = .2  # seconds
 
 
 class UARTServer:
@@ -30,30 +30,31 @@ class UARTServer:
         model = None
 
         if self.serial.inWaiting() > 1:
-            # Blocking connection
-            # logging.debug('ENTERING BLOCKING READ!!!')
             results = self.serial.readline().decode('utf-8')
-            # logging.debug('EXITING BLOCKING READ!!!')
+            # ONLY USE THE LAST LINE IN THE BUFFER
+            lines = [
+                line
+                for line in results.split('\n')
+                if line
+            ]
+            line = lines[-1]
+            if line:
+                logging.debug(f'UART Server read raw: {line}')
+                columns = line.split(',')
 
-            # loop over '\n' when receiving multiple lines/results from uart
-            for line in results.split('\n'):
-                if line:
-                    logging.debug(f'UART Server read raw: {line}')
-                    columns = line.split(',')
-                    # for c in columns:
-                    #     logging.debug(f'UART Column: {c}')
+                model = DriveToPythonData(**dict(
+                    alt_steps=columns[0],
+                    alt_steps_adder=columns[1],
+                    alt_diff=columns[2],
+                    az_steps=columns[3],
+                    az_steps_adder=columns[4],
+                    az_diff=columns[5],
+                    drive_status=columns[6]
+                ))
 
-                    model = DriveToPythonData(**dict(
-                        alt_steps=columns[0],
-                        alt_steps_adder=columns[1],
-                        alt_diff=columns[2],
-                        az_steps=columns[3],
-                        az_steps_adder=columns[4],
-                        az_diff=columns[5],
-                        drive_status=columns[6]
-                    ))
+                logging.debug(f'UART Model: {model}')
 
-                    logging.debug(f'UART Model: {model}')
+        self.serial.flush()
 
         # return last model received
         return model
@@ -79,6 +80,7 @@ class UARTServer:
                     self.tracker_data.base.control_mode
                 )
 
+            # TODO - Try to match all sleep timers across all devises
             time.sleep(0.1)
 
         logging.debug('Exited UART Server')

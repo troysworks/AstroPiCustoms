@@ -20,13 +20,10 @@
 </head>
 
 <script TYPE="text/javascript">
-
     const loopMilliseconds = 1000;
     let loopInterval = null;
     let alreadyRunning = false;
-
     let train_stopping = false;
-
     let tracker_data = {
         running: false,
         drive_status: ""
@@ -34,12 +31,6 @@
 
     function on_load() {
         getJson('/update_tracker');
-    }
-
-    function start_loop() {
-        if (!loopInterval) {
-            loopInterval = setInterval(getUpdateFromTracker, loopMilliseconds);
-        }
     }
 
     function postJson(url, data) {
@@ -113,7 +104,6 @@
         if (tracker_data.running && !loopInterval) {
             start_loop();
         }
-
         if (train_stopping && tracker_data.drive_status && tracker_data.drive_status.toUpperCase().includes('STOP')) {
             stop_loop()
         }
@@ -174,7 +164,8 @@
     }
 
     function tracker() {
-        if (tracker_data.control_mode === 1 || tracker_data.control_mode > 2) {
+
+        if (tracker_data.control_mode === 1 ) {
             tracker_data.control_mode = 2;
 
             start_loop()
@@ -182,26 +173,31 @@
             postJson("/update_tracker", {
                 'control_mode': tracker_data.control_mode
             });
-        } else {
+        } else if (tracker_data.control_mode == 2 || tracker_data.control_mode == 3){
             train_stopping = true;
-
-            if (tracker_data.control_mode > 0) {
-                tracker_data.control_mode = 1;
-            }
-
+            document.getElementById("drive_status").innerHTML = "Stopped";
+            tracker_data.drive_status = "Stopped";
+            tracker_data.control_mode = 1;
             postJson("/update_tracker", {
                 'control_mode': tracker_data.control_mode
             });
+            postJson("/update_tracker", {
+                'control_mode': tracker_data.drive_status
+            });
+            getUpdateFromTracker();
+            train_stopping = true;
+        }
+    }
+
+    function start_loop() {
+        if (!loopInterval) {
+            loopInterval = setInterval(getUpdateFromTracker, loopMilliseconds);
         }
     }
 
     function stop_loop() {
-        // document.getElementById("status_label").textContent = "Stopped";
-
         clearInterval(loopInterval);
-
         loopInterval = null;
-
         train_stopping = false;
     }
 
@@ -230,8 +226,6 @@
 
     function home_pos() {
         tracker_data.control_mode = 3;
-        // drive sets sp's to 0 and moves to home pos
-
         postJson("/update_tracker", {
             'control_mode': tracker_data.control_mode
         });
@@ -253,13 +247,11 @@
 <div class="container">
     <label style="font-size:18px;">Astropi Customs</label>
     <br>
-
     <label id="north_aligned" style="font-size:16px;">Not</label>
     <button onclick="north_align()" style="font-size:16px;" type="button">North Aligned</button>
     <button id="stop" onclick="tracker()" style="font-size:16px;" type="button">Tracking</button>
-    Status:<label class="label" id="drive_status" style="font-size:12px;">0</label>
-    Mode:<label class="label" id="control_mode" style="font-size:12px;">0</label>
-
+    Status:<label class="label" id="drive_status" style="font-size:18px;">0</label>
+    Mode:<label class="label" id="control_mode" style="font-size:16px;">0</label>
     <br>
     <label style="font-size:16px;">Site</label>
     Latitude:<label class="label" id="latitude" style="font-size:12px;">0.0</label>
@@ -275,7 +267,7 @@
         {% endfor %}
     </select>
     <button id="goto_solar_system" onclick="goto_solar_system()" style="font-size:16px;" type="button">Calc</button>
-
+    <br>
     <label style="font-size:16px;">NGC:</label>
     <select aria-label="NGC1" class="form-select" id="select_ngc" style="font-size:18px;">
         {% for value, desc in ngc.items() %}
@@ -296,10 +288,10 @@
     <label style="font-size:18px;">Custom</label>
 
     <label for="custom_ra_hour" style="font-size:18px;">Ra(H):</label>
-    <input class="json" id="custom_ra_hour" max="90" min="0" name="custom_ra_hour" placeholder="40"
+    <input class="json" id="custom_ra_hour" max="23" min="0" name="custom_ra_hour" placeholder="00"
            style=" width: 60px;font-size:16px;"
            type="number"
-           value="12">
+           value="0">
     M:
     <input class="json" id="custom_ra_min" max="60" min="0" name="custom_ra_min" placeholder="00" style=" width: 60px;font-size:16px;"
            type="number"
@@ -311,9 +303,9 @@
     <br>
 
     <label style="font-size:16px;">Dec(D):</label>
-    <input class="json" id="custom_dec_deg" max="360" min="0" name="custom_dec_deg" placeholder="35"
+    <input class="json" id="custom_dec_deg" max="89" min="-89" name="custom_dec_deg" placeholder="00"
            style=" width: 60px;font-size:16px;" type="number"
-           value="20">
+           value="0">
     M:
     <input class="json" id="custom_dec_min" max="60" min="0" name="custom_dec_min" placeholder="00"
            style=" width: 60px;font-size:16px;" type="number"
@@ -368,6 +360,7 @@
     <br>
 
     <label style="font-size:16px;">Drive Position</label>
+     <br>
     Az:<label class="label" id="az_steps" style="font-size:12px;">0.0</label>
     Az-Err:<label class="label" id="az_diff" style="font-size:12px;">0.0</label>
     Az-adder:<label class="label" id="az_steps_adder" style="font-size:12px;">0.0</label>
@@ -376,8 +369,6 @@
     Alt-Err:<label class="label" id="alt_diff" style="font-size:12px;">0.0</label>
     Alt-adder:<label class="label" id="alt_steps_adder" style="font-size:12px;">0.0</label>
 
-
 </div>
-
 </body>
 </html>

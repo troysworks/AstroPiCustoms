@@ -103,6 +103,9 @@ async def put_convert(celestial: CelestialObjectGroup, key: str):
         tracker_data.base.custom_dec_min = minutes
         tracker_data.base.custom_dec_sec = seconds
         tracker_data.base.calculating = ""
+
+        if not tracker_data.base.control_mode:
+            tracker_data.base.control_mode = 0
         if tracker_data.sky_coord:
             tracker_data.base.calculate(tracker_data.sky_coord, tracker_data.earth_location)
         return tracker_data.base
