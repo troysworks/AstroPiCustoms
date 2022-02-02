@@ -48,6 +48,7 @@ class PythonToJavascriptData(PythonToDriveData, DriveToPythonData):
     custom_dec_sec: Optional[float]
 
     local_sidereal: Optional[float]
+    local_sidereal_start: Optional[float]
     mount_select: Optional[int]
     ra_hour_decimal: Optional[float]
     dec_deg_decimal: Optional[float]
@@ -86,51 +87,79 @@ class PythonToJavascriptData(PythonToDriveData, DriveToPythonData):
         ra_decimal_hrs = self.ra_hour_decimal  # Angle(self.ra_hour_decimal).value
         dec_decimal_deg = self.dec_deg_decimal  # Angle(self.dec_deg_decimal).degree
 
-        quads = [0, 0, 0, 0]
-        q24 = 0
+        # Convert current sidereal and sky_coord to an Angle
+        sidereal_angle = Time(datetime.utcnow(), scale='utc', location=earth_location).sidereal_time('mean')
+        sky_coord_angle = Angle(sky_coord.ra)
 
-        # define  Quads
-        if self.local_sidereal <= 12:
-            quads[1] = self.local_sidereal
-            quads[0] = self.local_sidereal + 6
-            quads[3] = self.local_sidereal + 12
-            if self.local_sidereal >= 6:
-                quads[2] = self.local_sidereal - 6
-            else:
-                quads[2] = self.local_sidereal + 18
+        # Calc diff
+        diff_angle: Angle = sky_coord_angle - sidereal_angle
+
+        # Roll over the angle to a negative diff after 180d or 12h
+        diff_angle = diff_angle.wrap_at(180 * u.deg)
+
+        # diff_deg_tuple = diff_angle.dms
+        # diff_deg = diff_angle.dms.d
+        diff_deg = diff_angle.value
+        if diff_deg < 0:
+            offset = (90 - abs(diff_deg)) * -1
         else:
-            quads[1] = self.local_sidereal
-            quads[2] = self.local_sidereal - 6
-            quads[3] = self.local_sidereal - 12
-            if self.local_sidereal + 6 >= 24:
-                quads[0] = self.local_sidereal - 18
-            else:
-                quads[0] = self.local_sidereal + 6
+            offset = 90 - diff_deg
 
-        # get  24 hr quad
-        q = quads.index(max(quads))
-        if q == 0:  # NE
-            q24 = 3
-        if q == 1:  # NW
-            q24 = 0
-        if q == 2:  # SW
-            q24 = 1
-        if q == 3:  # SE
-            q24 = 2
-
-        if self.mount_select == 1:  # Fork Mount
-            if self.local_sidereal <= ra_decimal_hrs:
-                hrs_ra = ra_decimal_hrs - self.local_sidereal
-                ra_count = hrs_ra * 15 / self.ra_or_az_pulse_per_deg
-            else:
-                hrs_ra = (24 - self.local_sidereal) + ra_decimal_hrs
-                ra_count = hrs_ra * 15 / self.ra_or_az_pulse_per_deg
-
-            dec_count = (dec_decimal_deg - 90) / self.dec_or_alt_pulse_per_deg
+        if self.mount_select == 0:  # EQ
+            ra_count = offset / self.ra_or_az_pulse_per_deg
+            if offset < 0:  # east
+                dec_count = (90 - dec_decimal_deg) / float(self.dec_or_alt_pulse_per_deg)
+            else:  # west
+                dec_count = (90 - dec_decimal_deg) * -1 / float(self.dec_or_alt_pulse_per_deg)
             self.az_ra_steps_sp = float("{:.3f}".format(ra_count))
             self.alt_dec_steps_sp = float("{:.3f}".format(dec_count))
 
-        if self.mount_select == 0:  # EQ
+        if self.mount_select == 1:  # Fork Mount
+            ra_count = offset / self.ra_or_az_pulse_per_deg
+            dec_count = (90 - dec_decimal_deg) * -1 / float(self.dec_or_alt_pulse_per_deg)
+            self.az_ra_steps_sp = float("{:.3f}".format(ra_count))
+            self.alt_dec_steps_sp = float("{:.3f}".format(dec_count))
+
+        #  use alt az set points
+        if self.mount_select == 2:
+            az_count = azimuth_deg.deg / self.ra_or_az_pulse_per_deg
+            alt_count = altitude_deg.deg / self.dec_or_alt_pulse_per_deg
+            self.az_ra_steps_sp = "{:.3f}".format(az_count)
+            self.alt_dec_steps_sp = "{:.3f}".format(alt_count)
+
+        if self.mount_select == 3:  # EQ old
+            quads = [0, 0, 0, 0]
+            q24 = 0
+
+            # define  Quads
+            if self.local_sidereal <= 12:
+                quads[1] = self.local_sidereal
+                quads[0] = self.local_sidereal + 6
+                quads[3] = self.local_sidereal + 12
+                if self.local_sidereal >= 6:
+                    quads[2] = self.local_sidereal - 6
+                else:
+                    quads[2] = self.local_sidereal + 18
+            else:
+                quads[1] = self.local_sidereal
+                quads[2] = self.local_sidereal - 6
+                quads[3] = self.local_sidereal - 12
+                if self.local_sidereal + 6 >= 24:
+                    quads[0] = self.local_sidereal - 18
+                else:
+                    quads[0] = self.local_sidereal + 6
+
+            # get  24 hr quad
+            q = quads.index(max(quads))
+            if q == 0:  # NE
+                q24 = 3
+            if q == 1:  # NW
+                q24 = 0
+            if q == 2:  # SW
+                q24 = 1
+            if q == 3:  # SE
+                q24 = 2
+
             # check quad 0  NE
             if (quads[1] <= ra_decimal_hrs <= quads[0]) or (
                     q24 == 0 and (ra_decimal_hrs <= quads[0] or ra_decimal_hrs >= quads[1])):
@@ -179,19 +208,10 @@ class PythonToJavascriptData(PythonToDriveData, DriveToPythonData):
                     else:
                         ra_count = (6 - (quads[3] - ra_decimal_hrs)) * 15 / float(self.ra_or_az_pulse_per_deg)
                 else:
-                    ra_count = (ra_decimal_hrs - quads[0]) * 15 / float(self.ra_or_az_pulse_per_deg)
+                    ra_count = (quads[3] - ra_decimal_hrs) * 15 / float(self.ra_or_az_pulse_per_deg)
                 dec_count = (90 - dec_decimal_deg) * -1 / float(self.dec_or_alt_pulse_per_deg)
                 pointer = "SE"
-            self.az_ra_steps_sp = "{:.3f}".format(ra_count)
-            self.alt_dec_steps_sp = "{:.3f}".format(dec_count)
 
-        #  use alt az set points
-        if self.mount_select == 2:
-            az_count = azimuth_deg.deg / self.ra_or_az_pulse_per_deg
-            alt_count = altitude_deg.deg / self.dec_or_alt_pulse_per_deg
-
-            self.az_ra_steps_sp = "{:.3f}".format(az_count)
-            self.alt_dec_steps_sp = "{:.3f}".format(alt_count)
 
 
 class TrackerData:
@@ -212,6 +232,7 @@ class TrackerData:
 class CelestialObjectGroup(str, Enum):
     solar_system = 'solar_system'
     ngc = 'ngc'
+    messer = 'messer'
     star = 'star'
     custom = 'custom'
 

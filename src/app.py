@@ -38,6 +38,7 @@ def astro_form(request: Request):
             for b in DataFile.solar_system()
         },
         'ngc': DataFile.build_select_ngc(),
+        'messer': DataFile.build_select_messer(),
         'star': DataFile.build_select_star()
     })
 
@@ -55,16 +56,25 @@ async def put_convert(celestial: CelestialObjectGroup, key: str):
         tracker_data.base.ra_hour_decimal = Angle(sky_coord.ra).hourangle
         tracker_data.base.dec_deg_decimal = float(sky_coord.dec.value)
         tracker_data.base.object_info = "Solar System " + key + " "
+        tracker_data.base.local_sidereal_start = 0
 
     elif celestial == CelestialObjectGroup.ngc:
         data = DataFile.get_ngc(key)
 
         tracker_data.base.object_info = "NGC " + key + " "
+        tracker_data.base.local_sidereal_start = 0
+
+    elif celestial == CelestialObjectGroup.messer:
+        data = DataFile.get_messer(key)
+
+        tracker_data.base.object_info = "Messer " + key + " "
+        tracker_data.base.local_sidereal_start = 0
 
     elif celestial == CelestialObjectGroup.star:
         data = DataFile.get_star(key)
 
         tracker_data.base.object_info = "Star " + key + " "
+        tracker_data.base.local_sidereal_start = 0
 
     elif celestial == CelestialObjectGroup.custom:
         data = ""
@@ -78,6 +88,7 @@ async def put_convert(celestial: CelestialObjectGroup, key: str):
                              dec=tracker_data.base.dec_deg_decimal * u.degree, frame='icrs')
 
         tracker_data.base.object_info = "Custom "
+        tracker_data.base.local_sidereal_start = 0
 
     if data:
         tracker_data.base.ra_hour_decimal = float(data['ra_hour_decimal'])

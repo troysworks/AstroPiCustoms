@@ -8,12 +8,15 @@ from starlette import status
 class DataFile:
     # Lazy load
     _ngc: List[dict] = None
+    _messer: List[dict] = None
     _star: List[dict] = None
 
     _ngc_key = 'NGC'
+    _messer_key = 'M'
     _star_key = 'Star Name'
 
     _ngc_tooltip = 'Description'
+    _messer_tooltip = 'Description'
     _star_tooltip = 'description'
 
     @classmethod
@@ -34,6 +37,13 @@ class DataFile:
         return cls._ngc
 
     @classmethod
+    def messer(cls) -> List[dict]:
+        if not cls._messer:
+            cls._messer = cls.read('src/data/Messer.csv')
+
+        return cls._messer
+
+    @classmethod
     def star(cls) -> List[dict]:
         if not cls._star:
             cls._star = cls.read('src/data/NamedStars.csv')
@@ -52,7 +62,18 @@ class DataFile:
                 for row in cls.ngc()
                 if row[cls._ngc_key] == key
             )
-        except:
+        except Exception as e:
+            raise status.HTTP_404_NOT_FOUND
+
+    @classmethod
+    def get_messer(cls, key: str):
+        try:
+            return next(
+                row
+                for row in cls.messer()
+                if row[cls._messer_key] == key
+            )
+        except Exception as e:
             raise status.HTTP_404_NOT_FOUND
 
     @classmethod
@@ -63,7 +84,7 @@ class DataFile:
                 for row in cls.star()
                 if row[cls._star_key] == key
             )
-        except:
+        except Exception as e:
             raise status.HTTP_404_NOT_FOUND
 
     @classmethod
@@ -71,6 +92,13 @@ class DataFile:
         return {
             row[cls._ngc_key]: row[cls._ngc_tooltip]
             for row in cls.ngc()
+        }
+
+    @classmethod
+    def build_select_messer(cls) -> dict:
+        return {
+            row[cls._messer_key]: row[cls._messer_tooltip]
+            for row in cls.messer()
         }
 
     @classmethod

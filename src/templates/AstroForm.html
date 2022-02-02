@@ -133,6 +133,16 @@
         getJson('/convert/ngc/' + element.options[element.selectedIndex].text);
     }
 
+    function goto_messer() {
+        let element = document.getElementById('select_messer');
+        document.getElementById("calculating").innerHTML = "Calculating";
+        tracker_data.calculating = "Calculating";
+        postJson("/update_tracker", {
+            'calculating': tracker_data.calculating
+        });
+        getJson('/convert/messer/' + element.options[element.selectedIndex].text);
+    }
+
     function goto_star() {
         let element = document.getElementById('select_star');
         document.getElementById("calculating").innerHTML = "Calculating";
@@ -236,7 +246,6 @@
             document.getElementById(id).style.backgroundColor = "rgb(140,64,54)";
         } else {
             document.getElementById(id).style.backgroundColor = "rgb(255,255,255)";
-
         }
     }
 
@@ -245,7 +254,7 @@
 <body onload="on_load()">
 
 <div class="container">
-    <label style="font-size:18px;">Astropi Customs</label>
+    <label style="font-size:22px;">Astropi Customs</label>
     <br>
     <label id="north_aligned" style="font-size:16px;">Not</label>
     <button onclick="north_align()" style="font-size:16px;" type="button">North Aligned</button>
@@ -256,8 +265,8 @@
     <label style="font-size:16px;">Site</label>
     Latitude:<label class="label" id="latitude" style="font-size:12px;">0.0</label>
     Longitude:<label class="label" id="longitude" style="font-size:12px;">0.0</label>
-    Sea_level:<label class="label" id="sea_level" style="font-size:12px;">0.0</label>
-    Local Sidereal:<label class="label" id="local_sidereal" style="font-size:12px;">0.0</label>
+    >Sea_level(M):<label class="label" id="sea_level" style="font-size:12px;">0.0</label>
+    Local Sidereal(H):<label class="label" id="local_sidereal" style="font-size:12px;">0.0</label>
     <br>
 
     <label style="font-size:18px;">Solar System:</label>
@@ -275,6 +284,14 @@
         {% endfor %}
     </select>
     <button id="goto_ngc" onclick="goto_ngc()" style="font-size:16px;" type="button">Calc</button>
+    <br>
+    <label style="font-size:16px;">Messer:</label>
+    <select aria-label="Messer1" class="form-select" id="select_messer" style="font-size:18px;">
+        {% for value, desc in messer.items() %}
+        <option title="{{ desc }}" value="{{ val }}">{{ value }}</option>
+        {% endfor %}
+    </select>
+    <button id="goto_messer" onclick="goto_messer()" style="font-size:16px;" type="button">Calc</button>
     <br>
     <label style="font-size:16px;">Named Star:</label>
     <select aria-label="Vega" class="form-select" id="select_star" style="font-size:18px;">
@@ -320,6 +337,7 @@
     <label style="font-size:16px;">Object Info:</label>
     <label class="label" id="object_info" style="font-size:16px;">Object Info</label>
     <label class="label" id="calculating" style="font-size:20px; background: chocolate"></label>
+    <label class="label" id="meridian" style="font-size:20px; background: #d21e66"></label>
     <br>
     <label style="font-size:16px;">Control</label>
     <label style="font-size:16px;">Az(D):</label>
@@ -355,19 +373,19 @@
     <input class="checked" id="mount_select1" name="mount_select" onclick="mount_select(1)" type="radio"> Fork
     <input class="checked" id="mount_select2" name="mount_select" onclick="mount_select(2)" type="radio"> Alt Az
     <br>
-    Az deg/cnt:<label class="label" id="ra_or_az_pulse_per_deg" style="font-size:12px;">0.0</label>
-    Alt deg/cnt:<label class="label" id="dec_or_alt_pulse_per_deg" style="font-size:12px;">0.0</label>
+    Az/Ra deg/cnt:<label class="label" id="ra_or_az_pulse_per_deg" style="font-size:12px;">0.0</label>
+    Alt/Dec deg/cnt:<label class="label" id="dec_or_alt_pulse_per_deg" style="font-size:12px;">0.0</label>
     <br>
 
     <label style="font-size:16px;">Drive Position</label>
      <br>
-    Az:<label class="label" id="az_steps" style="font-size:12px;">0.0</label>
-    Az-Err:<label class="label" id="az_diff" style="font-size:12px;">0.0</label>
-    Az-adder:<label class="label" id="az_steps_adder" style="font-size:12px;">0.0</label>
+    Az/Ra:<label class="label" id="az_steps" style="font-size:12px;">0.0</label>
+    Az/Ra-Err:<label class="label" id="az_diff" style="font-size:12px;">0.0</label>
+    Az/Ra-adder:<label class="label" id="az_steps_adder" style="font-size:12px;">0.0</label>
     <br>
-    Alt:<label class="label" id="alt_steps" style="font-size:12px;">0.0</label>
-    Alt-Err:<label class="label" id="alt_diff" style="font-size:12px;">0.0</label>
-    Alt-adder:<label class="label" id="alt_steps_adder" style="font-size:12px;">0.0</label>
+    Alt/Dec:<label class="label" id="alt_steps" style="font-size:12px;">0.0</label>
+    Alt/Dec-Err:<label class="label" id="alt_diff" style="font-size:12px;">0.0</label>
+    Alt/Dec-adder:<label class="label" id="alt_steps_adder" style="font-size:12px;">0.0</label>
 
 </div>
 </body>
