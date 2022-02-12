@@ -56,6 +56,7 @@ class PythonToJavascriptData(PythonToDriveData, DriveToPythonData):
     calculating: Optional[str]
 
     running: Optional[bool]
+    meridian: Optional[str]
 
     def calculate(self, sky_coord: SkyCoord, earth_location: EarthLocation):
         self.calculate_alt_az(sky_coord, earth_location)  # 1st
@@ -79,6 +80,11 @@ class PythonToJavascriptData(PythonToDriveData, DriveToPythonData):
         self.local_sidereal = float(format("%.3f" % Angle(sidereal).hourangle))
         self.ra_hour_decimal = Angle(sky_coord.ra).hour
         self.dec_deg_decimal = Angle(sky_coord.dec).degree
+
+        if self.ra_hour_decimal > self.local_sidereal > self.ra_hour_decimal - .1:
+            self.meridian = "Meridian Flip Soon"
+        else:
+            self.meridian = ""
 
     def calculate_drive_counts(self, sky_coord: SkyCoord, earth_location: EarthLocation):
         transform = sky_coord.transform_to(AltAz(obstime=Time(datetime.utcnow(), scale='utc'), location=earth_location))

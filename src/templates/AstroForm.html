@@ -96,10 +96,11 @@
                 item.checked = item.id === item.name + data[item.name];
             }
         });
-
-        check_alt("altitude_deg");
-        check_alt("altitude_min");
-        check_alt("altitude_sec");
+        if (document.getElementById("altitude_deg").value < 0) {
+             document.getElementById("horizon").innerHTML = "Below Horizon";
+        } else {
+            document.getElementById("horizon").innerHTML = "";
+        }
 
         if (tracker_data.running && !loopInterval) {
             start_loop();
@@ -241,15 +242,7 @@
         });
     }
 
-    function check_alt(id) {
-        if (document.getElementById(id).value < 0) {
-            document.getElementById(id).style.backgroundColor = "rgb(140,64,54)";
-        } else {
-            document.getElementById(id).style.backgroundColor = "rgb(255,255,255)";
-        }
-    }
-
-</script>
+ </script>
 
 <body onload="on_load()">
 
@@ -366,7 +359,7 @@
     <input class="json" id="altitude_sec" max="60" min="-5" name="altitude_sec" placeholder="0" style=" width: 50px;font-size:12px;"
            type="number"
            value="0">
-
+    <label class="label" id="horizon" style="font-size:20px; background: #d21e66"></label>
     <br>
     <button id="home_pos" onclick="home_pos()" style="font-size:16px;" type="button">Home Position</button>
     <input checked class="checked" id="mount_select0" name="mount_select" onclick="mount_select(0)" type="radio"> EQ
