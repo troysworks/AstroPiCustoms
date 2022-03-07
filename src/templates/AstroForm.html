@@ -26,7 +26,10 @@
     let train_stopping = false;
     let tracker_data = {
         running: false,
-        drive_status: ""
+        drive_status: "",
+        altitude_deg_decimal: 0,
+        azimuth_deg_decimal: 0
+
     };
 
     function on_load() {
@@ -96,8 +99,15 @@
                 item.checked = item.id === item.name + data[item.name];
             }
         });
-        if (document.getElementById("altitude_deg").value < 0) {
-             document.getElementById("horizon").innerHTML = "Below Horizon";
+
+        if (tracker_data.altitude_deg_decimal < 0 && tracker_data.control_mode == 2) {
+            tracker_data.control_mode = 1;
+            postJson("/update_tracker", {
+            'control_mode': tracker_data.control_mode
+            });
+            document.getElementById("horizon").innerHTML = "";
+        } else if (tracker_data.altitude_deg_decimal < 3 && tracker_data.control_mode == 2) {
+            document.getElementById("horizon").innerHTML = "Below Horizon Soon";
         } else {
             document.getElementById("horizon").innerHTML = "";
         }
@@ -242,6 +252,14 @@
         });
     }
 
+    function manual_move(bnt) {
+        //if (bnt == 0) { // RA+
+        let element = document.getElementById('soft_adder_scale');
+
+        let soft_adder_scale = element.options[element.selectedIndex].text;
+        getJson("/soft_adder/" + bnt + "/" + soft_adder_scale);
+    }
+
  </script>
 
 <body onload="on_load()">
@@ -345,6 +363,7 @@
     <input class="json" id="azimuth_sec" max="60" min="0" name="azimuth_sec" placeholder="00" style=" width: 50px;font-size:12px;"
            type="number"
            value="0">
+    Az Deg Dec:<label class="label" id="azimuth_deg_decimal" style="font-size:12px;">0.0</label>
     <br>
 
     <label style="font-size:16px;">Alt(D):</label>
@@ -359,6 +378,7 @@
     <input class="json" id="altitude_sec" max="60" min="-5" name="altitude_sec" placeholder="0" style=" width: 50px;font-size:12px;"
            type="number"
            value="0">
+    Alt Deg Dec:<label class="label" id="altitude_deg_decimal" style="font-size:12px;">0.0</label>
     <label class="label" id="horizon" style="font-size:20px; background: #d21e66"></label>
     <br>
     <button id="home_pos" onclick="home_pos()" style="font-size:16px;" type="button">Home Position</button>
@@ -380,6 +400,25 @@
     Alt/Dec-Err:<label class="label" id="alt_diff" style="font-size:12px;">0.0</label>
     Alt/Dec-adder:<label class="label" id="alt_steps_adder" style="font-size:12px;">0.0</label>
 
+    <br>
+    <label style="font-size:16px;">----Manual Moves----</label>
+    <br>
+    <button type="button" style="width:80px; height:30px; font-size: 24px" onclick="manual_move(0)">&#8678;Ra+</button>
+    <button type="button" style="width:80px; height:30px; font-size: 24px" onclick="manual_move(1)">&#8680;Ra-</button>
+    <br>
+    <br>
+    <button type="button" style="width:80px; height:30px; font-size: 24px" onclick="manual_move(2)">&#8679;Dec+</button>
+    <button type="button" style="width:80px; height:30px; font-size: 24px" onclick="manual_move(3)">&#8681;Dec-</button>
+    <br>
+    <br>
+    <label style="font-size:16px;">Deg-Movement</label>
+    <select aria-label=".01" class="form-select" id="soft_adder_scale" style="font-size:24px;">
+    <option>.01</option>
+    <option>.05</option>
+    <option>.1</option>
+    <option>.5</option>
+    <option>1</option>
+    </select>
 </div>
 </body>
 </html>

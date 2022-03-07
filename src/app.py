@@ -43,6 +43,27 @@ def astro_form(request: Request):
     })
 
 
+@app.get('/soft_adder/{button}/{scale}')
+async def soft_adder(button: str, scale: str):
+    button = int(button)
+    scale = float(scale)
+    if not tracker_data.base.soft_ra_adder:
+        tracker_data.base.soft_ra_adder = 0
+    if not tracker_data.base.soft_dec_adder:
+        tracker_data.base.soft_dec_adder = 0
+
+    if button == 0:
+        tracker_data.base.soft_ra_adder += scale / tracker_data.base.ra_or_az_pulse_per_deg
+    elif button == 1:
+        tracker_data.base.soft_ra_adder -= scale / tracker_data.base.ra_or_az_pulse_per_deg
+    elif button == 2:
+        tracker_data.base.soft_dec_adder += scale / tracker_data.base.dec_or_alt_pulse_per_deg
+    elif button == 3:
+        tracker_data.base.soft_dec_adder -= scale / tracker_data.base.dec_or_alt_pulse_per_deg
+
+    return tracker_data.base
+
+
 @app.get('/convert/{celestial}/{key}')
 async def put_convert(celestial: CelestialObjectGroup, key: str):
     sky_coord = None
