@@ -138,8 +138,8 @@ class PythonToJavascriptData(PythonToDriveData, DriveToPythonData):
 
         #  use alt az set points
         if self.mount_select == 2:
-            ra_count = azimuth_deg.deg / self.ra_or_az_pulse_per_deg
-            dec_count = altitude_deg.deg / self.dec_or_alt_pulse_per_deg
+            ra_count = azimuth_deg / self.ra_or_az_pulse_per_deg
+            dec_count = altitude_deg / self.dec_or_alt_pulse_per_deg
 
         self.az_ra_steps_sp = float("{:.3f}".format(ra_count + self.soft_ra_adder))
         self.alt_dec_steps_sp = float("{:.3f}".format(dec_count + self.soft_dec_adder))

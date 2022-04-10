@@ -1,9 +1,5 @@
-fastapi
-pydantic
-astropy
-starlette
 uvicorn
+astropy
+fastapi
 pyserial
-RPi.GPIO
-numpy
 jinja2

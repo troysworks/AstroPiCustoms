@@ -12,6 +12,7 @@ def main():
     uvicorn_config = UvicornConfig(
         'src.app:app',
         host='0.0.0.0',
+        port=80,
         log_level='debug',
     )
 
