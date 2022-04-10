@@ -36,7 +36,7 @@ echo "Update pip"
 python -m pip install --upgrade pip
 
 echo "Installing requirements"
-pip install -r requirements.txt
+pip install -r requirements-versioned.txt
 
 echo "Installing AstroPiCustoms systemctl Service"
 sudo cp astropicustoms.service /etc/systemd/system/astropicustoms.service
