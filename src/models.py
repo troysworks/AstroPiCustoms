@@ -58,6 +58,7 @@ class PythonToJavascriptData(PythonToDriveData, DriveToPythonData):
     calculating: Optional[str]
     soft_ra_adder: Optional[float]
     soft_dec_adder: Optional[float]
+    north_south_select: Optional[int]
 
     running: Optional[bool]
     meridian: Optional[str]
@@ -77,11 +78,11 @@ class PythonToJavascriptData(PythonToDriveData, DriveToPythonData):
 
         self.altitude_deg = alt_dms.d
         self.altitude_min = alt_dms.m
-        self.altitude_sec = alt_dms.s
+        self.altitude_sec = float("{:.2f}".format(alt_dms.s))
 
         self.azimuth_deg = az_dms.d
         self.azimuth_min = az_dms.m
-        self.azimuth_sec = az_dms.s
+        self.azimuth_sec = float("{:.2f}".format(az_dms.s))
 
         sidereal = Time(datetime.utcnow(), scale='utc', location=earth_location).sidereal_time('mean')
         self.local_sidereal = float(format("%.3f" % Angle(sidereal).hourangle))
@@ -96,7 +97,7 @@ class PythonToJavascriptData(PythonToDriveData, DriveToPythonData):
     def calculate_drive_counts(self, sky_coord: SkyCoord, earth_location: EarthLocation):
         altitude_deg = self.altitude_deg_decimal
         azimuth_deg = self.azimuth_deg_decimal
-        dec_decimal_deg = self.dec_deg_decimal  # Angle(self.dec_deg_decimal).degree
+        dec_decimal_deg = self.dec_deg_decimal
         ra_count = 0
         dec_count = 0
         if self.soft_ra_adder is None:
@@ -112,9 +113,6 @@ class PythonToJavascriptData(PythonToDriveData, DriveToPythonData):
 
         # Roll over the angle to a negative diff after 180d or 12h
         diff_angle_180 = diff_angle.wrap_at(180 * u.deg)
-        diff_small_angle = diff_angle.wrap_at(90 * u.deg)
-        # diff_deg_tuple = diff_angle.dms
-        # diff_deg = diff_angle.dms.d
         diff_deg = diff_angle_180.value
 
         if diff_deg < 0:
@@ -122,24 +120,46 @@ class PythonToJavascriptData(PythonToDriveData, DriveToPythonData):
         else:
             offset = 90 - diff_deg
 
-        if self.mount_select == 0:  # EQ
-            ra_count = offset / self.ra_or_az_pulse_per_deg
-            if offset < 0:  # east
+        if self.north_south_select == 0:  # north
+
+            if self.mount_select == 0:  # EQ north
+                ra_count = offset / self.ra_or_az_pulse_per_deg
+                if offset < 0:  # east
+                    dec_count = (90 - dec_decimal_deg) * -1 / float(self.dec_or_alt_pulse_per_deg)
+                else:  # west
+                    dec_count = (90 - dec_decimal_deg) / float(self.dec_or_alt_pulse_per_deg)
+
+            if self.mount_select == 1:  # Fork Mount north
+                if diff_deg >= 0:  # west
+                    ra_count = (180 - diff_deg) / self.ra_or_az_pulse_per_deg
+                else:
+                    ra_count = abs(-180 + diff_deg) / self.ra_or_az_pulse_per_deg
                 dec_count = (90 - dec_decimal_deg) * -1 / float(self.dec_or_alt_pulse_per_deg)
-            else:  # west
-                dec_count = (90 - dec_decimal_deg) / float(self.dec_or_alt_pulse_per_deg)
 
-        if self.mount_select == 1:  # Fork Mount
-            if diff_deg >= 0:
-                ra_count = (180 - diff_deg) / self.ra_or_az_pulse_per_deg
-            else:
-                ra_count = abs(-180 + diff_deg) / self.ra_or_az_pulse_per_deg
-            dec_count = (90 - dec_decimal_deg) * -1 / float(self.dec_or_alt_pulse_per_deg)
+            #  use alt az set points north
+            if self.mount_select == 2:
+                ra_count = azimuth_deg / self.ra_or_az_pulse_per_deg
+                dec_count = altitude_deg / self.dec_or_alt_pulse_per_deg
+        else:
 
-        #  use alt az set points
-        if self.mount_select == 2:
-            ra_count = azimuth_deg / self.ra_or_az_pulse_per_deg
-            dec_count = altitude_deg / self.dec_or_alt_pulse_per_deg
+            if self.mount_select == 0:  # EQ south
+                ra_count = offset / self.ra_or_az_pulse_per_deg * -1
+                if offset < 0:  # east
+                    dec_count = (-90 - dec_decimal_deg) / float(self.dec_or_alt_pulse_per_deg)
+                else:  # west
+                    dec_count = (-90 - dec_decimal_deg) * -1 / float(self.dec_or_alt_pulse_per_deg)
+
+            if self.mount_select == 1:  # Fork Mount south
+                if diff_deg >= 0:
+                    ra_count = (180 - diff_deg) / self.ra_or_az_pulse_per_deg * -1
+                else:
+                    ra_count = abs(-180 + diff_deg) / self.ra_or_az_pulse_per_deg * -1
+                dec_count = (-90 - dec_decimal_deg) / float(self.dec_or_alt_pulse_per_deg)
+
+            #  use alt az set points south
+            if self.mount_select == 2:
+                ra_count = (180 - azimuth_deg) / self.ra_or_az_pulse_per_deg * -1
+                dec_count = altitude_deg / self.dec_or_alt_pulse_per_deg
 
         self.az_ra_steps_sp = float("{:.3f}".format(ra_count + self.soft_ra_adder))
         self.alt_dec_steps_sp = float("{:.3f}".format(dec_count + self.soft_dec_adder))

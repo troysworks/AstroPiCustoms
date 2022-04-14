@@ -2,7 +2,8 @@
   "latitude": 39.89169776,
   "longitude": -104.918,
   "sea_level": 1636,
-  "ra_or_az_pulse_per_deg": 0.000624,
-  "dec_or_alt_pulse_per_deg": 0.00073,
-  "mount_select": 2
+  "ra_or_az_pulse_per_deg": 0.00333,
+  "dec_or_alt_pulse_per_deg": 0.01875,
+  "mount_select": 1,
+  "north_south_select": 0
 }

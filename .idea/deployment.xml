@@ -1,7 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" remoteFilesAllowedToDisappearOnAutoupload="false">
+  <component name="PublishConfigData" autoUpload="Always" serverName="pi@astropi8:22" remoteFilesAllowedToDisappearOnAutoupload="false">
     <serverData>
+      <paths name="pi@astropi16:22">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/AstroPiCustoms" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+          <excludedPaths>
+            <excludedPath local="true" path="$PROJECT_DIR$/.idea" />
+            <excludedPath local="true" path="$PROJECT_DIR$/objectlists" />
+          </excludedPaths>
+        </serverdata>
+      </paths>
+      <paths name="pi@astropi8:22">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/AstroPiCustoms" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+          <excludedPaths>
+            <excludedPath local="true" path="$PROJECT_DIR$/.idea" />
+            <excludedPath local="true" path="$PROJECT_DIR$/objectlists" />
+          </excludedPaths>
+        </serverdata>
+      </paths>
       <paths name="pi@astropidob10:22">
         <serverdata>
           <mappings>
@@ -17,6 +39,13 @@
       <paths name="pi@astropidob12:22">
         <serverdata>
           <mappings>
+            <mapping deploy="/home/pi/AstroPiCustoms" local="$PROJECT_DIR$" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="pi@astropislt">
+        <serverdata>
+          <mappings>
             <mapping deploy="/AstroPiCustoms" local="$PROJECT_DIR$" web="/" />
           </mappings>
           <excludedPaths>
@@ -25,6 +54,21 @@
           </excludedPaths>
         </serverdata>
       </paths>
+      <paths name="pi@astropislt:22">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/home/pi/AstroPiCustoms" local="$PROJECT_DIR$" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="pi@cardbot:22">
+        <serverdata>
+          <mappings>
+            <mapping local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
     </serverData>
+    <option name="myAutoUpload" value="ALWAYS" />
   </component>
 </project>

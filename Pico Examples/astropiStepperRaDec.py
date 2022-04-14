@@ -1,14 +1,15 @@
 import time
+
 from machine import Pin, UART, PWM, ADC
 
 # Astropi Customs 1-25-22
 # Meade 8 Ra Dec st-4 guide-able
 # stepper motors and 1/16 microstep for tracking
-# for raspberry pi Pico Examples
+# for raspberry pi pico
 # Ra drive uses 0.00333 deg/count
 # Dec drive uses 0.01875 deg/count
 # uart communication to/from raspberry pi for counts setpoint and modes
-# save as main.py on Pico Examples to auto run
+# save as main.py on pico to auto run
 
 COMMAND_PARSE = b'\n'
 
@@ -141,10 +142,10 @@ class AltAzProcess:
 
     def dec_guide_neg_callback(self, pin):
         self.dec_guide_neg_flag = True
-        
+
     def dec_guide_pos_callback(self, pin):
         self.dec_guide_pos_flag = True
-        
+
     def ra_drive(self, hz, direction, duty):
         if hz < 15:
             hz = 15
@@ -189,7 +190,7 @@ class AltAzProcess:
                     self.ra_steps -= (1 / 16)
                 else:
                     self.ra_steps -= 1
-                    
+
     def ra_guide_neg_callback(self, pin):
         self.ra_guide_neg_flag = True
 
@@ -280,8 +281,8 @@ class AltAzProcess:
             else:
                 self.dec_guide_adder -= self.dec_guide_change_value
                 self.dec_guide_neg_flag = False
-                
-        if self.dec_guide_pos_flag:           
+
+        if self.dec_guide_pos_flag:
             if self.dec_guide_pos.value():
                 self.dec_guide_adder += self.dec_guide_change_value
             else:
@@ -366,20 +367,27 @@ class AltAzProcess:
                     self.ra_drive(self.ra_osc_sp, self.ra_control_dir, 0)  # off
                 else:
                     self.ra_drive(self.ra_osc_sp, self.ra_control_dir, self.duty50)  # slower
-            elif self.ra_diff > 10:
+            elif self.ra_diff > 5:
                 self.ra_speed_pin.value(0)  # fast
-                self.ra_hz = int(self.ra_diff * 2)
+                self.ra_hz = int(self.ra_diff * 4)
                 if self.ra_hz > self.max_speed:
                     self.ra_hz = self.max_speed
                 self.ra_drive(self.ra_hz, self.ra_dir, self.duty50)
             elif ra_diff_micro > 3 and self.dec_diff < 5:
                 self.ra_speed_pin.value(1)  # slow
                 if self.ra_control_dir:
-                    self.ra_osc = int(self.ra_osc_sp + (ra_diff_micro / 10))
+                    if self.ra_control_sp >= self.ra_steps:  # Right
+                        self.ra_osc = int(self.ra_osc_sp + (ra_diff_micro / 10))
+                    else:  # left
+                        self.ra_osc = int(self.ra_osc_sp - (ra_diff_micro / 10))
                     self.ra_drive(self.ra_osc, self.ra_control_dir, self.duty50)
                 else:
-                    self.ra_osc = int(self.ra_osc_sp - (ra_diff_micro / 10))
+                    if self.ra_control_sp < self.ra_steps:  # left
+                        self.ra_osc = int(self.ra_osc_sp + (ra_diff_micro / 10))
+                    else:  # Right
+                        self.ra_osc = int(self.ra_osc_sp - (ra_diff_micro / 10))
                     self.ra_drive(self.ra_osc, self.ra_control_dir, self.duty50)
+            # print('ra_control_dir ', self.ra_control_dir, ' ra_dir ', self.ra_dir, ' ra_diff ', self.ra_diff, ' ra_osc ', self.ra_osc)
 
 
 class UARTProcess:
@@ -418,7 +426,8 @@ class UARTProcess:
             self.dec_steps_sp = float(self.dec_steps_sp)
             self.ra_steps_sp = float(self.ra_steps_sp)
             self.control_mode = int(self.control_mode)
-            print('Received', 'AltSP ', self.dec_steps_sp, ' AzSP ', self.ra_steps_sp, ' Control Mode ', self.control_mode)
+            print('Received', 'AltSP ', self.dec_steps_sp, ' AzSP ', self.ra_steps_sp, ' Control Mode ',
+                  self.control_mode)
             if self.control_mode == 3:
                 self.dec_steps_sp = 0
                 self.ra_steps_sp = 0
@@ -430,7 +439,7 @@ class UARTProcess:
 
         except:
             print('Error trying to decode: {0}'.format(self.buffer))
-            
+
     def reset(self):
         self.buffer = b''
 

@@ -167,12 +167,12 @@
     function goto_custom() {
         tracker_data.calculating = "Calculating";
         document.getElementById("calculating").innerHTML = "Calculating";
-        tracker_data.custom_ra_hour = document.getElementById("custom_ra_hour").value
-        tracker_data.custom_ra_min = document.getElementById("custom_ra_min").value
-        tracker_data.custom_ra_sec = document.getElementById("custom_ra_sec").value
-        tracker_data.custom_dec_deg = document.getElementById("custom_dec_deg").value
-        tracker_data.custom_dec_min = document.getElementById("custom_dec_min").value
-        tracker_data.custom_dec_sec = document.getElementById("custom_ra_hour").value
+        tracker_data.custom_ra_hour = document.getElementById("custom_ra_hour_").value
+        tracker_data.custom_ra_min = document.getElementById("custom_ra_min_").value
+        tracker_data.custom_ra_sec = document.getElementById("custom_ra_sec_").value
+        tracker_data.custom_dec_deg = document.getElementById("custom_dec_deg_").value
+        tracker_data.custom_dec_min = document.getElementById("custom_dec_min_").value
+        tracker_data.custom_dec_sec = document.getElementById("custom_ra_hour_").value
 
         postJson("/update_tracker", {'calculating': tracker_data.calculating});
         postJson("/update_tracker", {'custom_ra_hour': tracker_data.custom_ra_hour});
@@ -245,6 +245,14 @@
         });
     }
 
+    function north_south_select(value) {
+        tracker_data.north_south_select = value;
+
+        postJson("/update_tracker", {
+            'north_south_select': tracker_data.north_south_select
+        });
+    }
+
     function home_pos() {
         tracker_data.control_mode = 3;
         postJson("/update_tracker", {
@@ -268,7 +276,7 @@
     <label style="font-size:22px;">Astropi Customs</label>
     <br>
     <label id="north_aligned" style="font-size:16px;">Not</label>
-    <button onclick="north_align()" style="font-size:16px;" type="button">North Aligned</button>
+    <button onclick="north_align()" style="font-size:16px;" type="button">Polar Aligned</button>
     <button id="stop" onclick="tracker()" style="font-size:16px;" type="button">Tracking</button>
     Status:<label class="label" id="drive_status" style="font-size:18px;">0</label>
     Mode:<label class="label" id="control_mode" style="font-size:16px;">0</label>
@@ -277,6 +285,7 @@
     Latitude:<label class="label" id="latitude" style="font-size:12px;">0.0</label>
     Longitude:<label class="label" id="longitude" style="font-size:12px;">0.0</label>
     >Sea_level(M):<label class="label" id="sea_level" style="font-size:12px;">0.0</label>
+    <br>
     Local Sidereal(H):<label class="label" id="local_sidereal" style="font-size:12px;">0.0</label>
     <br>
 
@@ -312,34 +321,33 @@
     </select>
     <button id="goto_star" onclick="goto_star()" style="font-size:16px;" type="button">Calc</button>
     <br>
-
     <label style="font-size:18px;">Custom</label>
 
     <label for="custom_ra_hour" style="font-size:18px;">Ra(H):</label>
-    <input class="json" id="custom_ra_hour" max="23" min="0" name="custom_ra_hour" placeholder="00"
+    <input class="custom" id="custom_ra_hour_" max="23" min="0" name="custom_ra_hour" placeholder="00"
            style=" width: 60px;font-size:16px;"
            type="number"
            value="0">
     M:
-    <input class="json" id="custom_ra_min" max="60" min="0" name="custom_ra_min" placeholder="00" style=" width: 60px;font-size:16px;"
+    <input class="custom" id="custom_ra_min_" max="60" min="0" name="custom_ra_min" placeholder="00" style=" width: 60px;font-size:16px;"
            type="number"
            value="0">
     S:
-    <input class="json" id="custom_ra_sec" max="60" min="0" name="custom_ra_sec" placeholder="00" style=" width: 60px;font-size:16px;"
+    <input class="custom" id="custom_ra_sec_" max="60" min="0" name="custom_ra_sec" placeholder="00" style=" width: 60px;font-size:16px;"
            type="number"
            value="0">
     <br>
 
-    <label style="font-size:16px;">Dec(D):</label>
-    <input class="json" id="custom_dec_deg" max="89" min="-89" name="custom_dec_deg" placeholder="00"
+    <label style="font-size:18px;">Dec(D):</label>
+    <input class="custom" id="custom_dec_deg_" max="89" min="-89" name="custom_dec_deg" placeholder="00"
            style=" width: 60px;font-size:16px;" type="number"
            value="0">
     M:
-    <input class="json" id="custom_dec_min" max="60" min="0" name="custom_dec_min" placeholder="00"
+    <input class="custom" id="custom_dec_min_" max="60" min="0" name="custom_dec_min" placeholder="00"
            style=" width: 60px;font-size:16px;" type="number"
            value="0">
     S:
-    <input class="json" id="custom_dec_sec" max="60" min="0" name="custom_dec_sec" placeholder="00"
+    <input class="custom" id="custom_dec_sec_" max="60" min="0" name="custom_dec_sec" placeholder="00"
            style=" width: 60px;font-size:16px;" type="number"
            value="0">
 
@@ -347,44 +355,35 @@
     <br>
     <label style="font-size:16px;">Object Info:</label>
     <label class="label" id="object_info" style="font-size:16px;">Object Info</label>
-    <label class="label" id="calculating" style="font-size:20px; background: chocolate"></label>
-    <label class="label" id="meridian" style="font-size:20px; background: #d21e66"></label>
+    <label class="label" id="calculating" style="font-size:16px; background: chocolate"></label>
+    <label class="label" id="meridian" style="font-size:16px; background: #d21e66"></label>
     <br>
-    <label style="font-size:16px;">Control</label>
-    <label style="font-size:16px;">Az(D):</label>
-    <input class="json" id="azimuth_deg" max="360" min="0" name="azimuth_deg" placeholder="00" style=" width: 50px;font-size:12px;"
-           type="number"
-           value="0">
+    <label style="font-size:16px;">Object Az(D):</label>
+    <label class="label" id="azimuth_deg" style="font-size:16px;">0</label>
     M:
-    <input class="json" id="azimuth_min" max="60" min="0" name="azimuth_min" placeholder="00" style=" width: 50px;font-size:12px;"
-           type="number"
-           value="0">
+    <label class="label" id="azimuth_min" style="font-size:16px;">0</label>
     S:
-    <input class="json" id="azimuth_sec" max="60" min="0" name="azimuth_sec" placeholder="00" style=" width: 50px;font-size:12px;"
-           type="number"
-           value="0">
-    Az Deg Dec:<label class="label" id="azimuth_deg_decimal" style="font-size:12px;">0.0</label>
+    <label class="label" id="azimuth_sec" style="font-size:16px;">0</label>
+    Az Deg Dec:<label class="label" id="azimuth_deg_decimal" style="font-size:16px;">0.0</label>
     <br>
-
     <label style="font-size:16px;">Alt(D):</label>
-    <input class="json" id="altitude_deg" max="90" min="-5" name="altitude_deg" placeholder="0" style=" width: 50px;font-size:12px;"
-           type="number"
-           value="0">
+    <label class="label" id="altitude_deg" style="font-size:16px;">0</label>
     M:
-    <input class="json" id="altitude_min" max="60" min="-5" name="altitude_min" placeholder="0" style=" width: 50px;font-size:12px;"
-           type="number"
-           value="0">
+    <label class="label" id="altitude_min" style="font-size:16px;">0</label>
     S:
-    <input class="json" id="altitude_sec" max="60" min="-5" name="altitude_sec" placeholder="0" style=" width: 50px;font-size:12px;"
-           type="number"
-           value="0">
-    Alt Deg Dec:<label class="label" id="altitude_deg_decimal" style="font-size:12px;">0.0</label>
+    <label class="label" id="altitude_sec" style="font-size:16px;">0</label>
+
+    Alt Deg Dec:<label class="label" id="altitude_deg_decimal" style="font-size:16px;">0.0</label>
     <label class="label" id="horizon" style="font-size:20px; background: #d21e66"></label>
     <br>
     <button id="home_pos" onclick="home_pos()" style="font-size:16px;" type="button">Home Position</button>
+    Mount
     <input checked class="checked" id="mount_select0" name="mount_select" onclick="mount_select(0)" type="radio"> EQ
     <input class="checked" id="mount_select1" name="mount_select" onclick="mount_select(1)" type="radio"> Fork
     <input class="checked" id="mount_select2" name="mount_select" onclick="mount_select(2)" type="radio"> Alt Az
+    &emsp; Hemis
+    <input checked class="checked" id="north_south_select0" name="north_south_select" onclick="north_south_select(0)" type="radio"> North
+    <input class="checked" id="north_south_select1" name="north_south_select" onclick="north_south_select(1)" type="radio"> South
     <br>
     Az/Ra deg/cnt:<label class="label" id="ra_or_az_pulse_per_deg" style="font-size:12px;">0.0</label>
     Alt/Dec deg/cnt:<label class="label" id="dec_or_alt_pulse_per_deg" style="font-size:12px;">0.0</label>
