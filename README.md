@@ -46,7 +46,7 @@
 ---
 #### Run AstroPiCustoms Web Interface
 * `http://<<yourhostname>>/` on your PC or Phone
-    * Example: http://astropidob12/
+    * Example: http://astropidob12:8000
 ---
 For more details goto:
 #### http://www.troysworks.com

@@ -2,8 +2,8 @@
 <project version="4">
   <component name="WebServers">
     <option name="servers">
-      <webServer id="3c045bb0-d055-4da5-9034-b5c1dde14197" name="pi@astropislt" url="http://astropislt:8000">
-        <fileTransfer rootFolder="/home/pi" accessType="SFTP" host="astropislt" port="22" sshConfigId="3290ab2d-8f91-4989-9497-4cbfde4c63a7" sshConfig="pi@astropislt:22">
+      <webServer id="3c045bb0-d055-4da5-9034-b5c1dde14197" name="pi@astropi" url="http://astropi:8000">
+        <fileTransfer rootFolder="/home/pi" accessType="SFTP" host="astropi" port="22" sshConfigId="3290ab2d-8f91-4989-9497-4cbfde4c63a7" sshConfig="pi@astropi:22">
           <advancedOptions>
             <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
           </advancedOptions>

@@ -1,12 +1,18 @@
 import json
 from datetime import datetime
 from enum import Enum
+from time import time
 from typing import Optional
 
 import astropy.units as u
 from astropy.coordinates import SkyCoord, EarthLocation, AltAz, Angle
 from astropy.time import Time
 from pydantic import BaseModel
+
+avg_counter = 0
+last_time_start = 0
+last_az_deg = 0
+last_alt_deg = 0
 
 
 class PythonToDriveData(BaseModel):
@@ -19,9 +25,13 @@ class DriveToPythonData(BaseModel):
     alt_steps: Optional[float]
     alt_steps_adder: Optional[float]
     alt_diff: Optional[float]
+    alt_osc_drive: Optional[int]
+
     az_steps: Optional[float]
     az_steps_adder: Optional[float]
     az_diff: Optional[float]
+    az_osc_drive: Optional[int]
+
     drive_status: Optional[str]
 
 
@@ -59,17 +69,18 @@ class PythonToJavascriptData(PythonToDriveData, DriveToPythonData):
     soft_ra_adder: Optional[float]
     soft_dec_adder: Optional[float]
     north_south_select: Optional[int]
-
+    dec_alt_osc_calc: Optional[int]
+    ra_az_osc_calc: Optional[int]
     running: Optional[bool]
     meridian: Optional[str]
 
     def calculate(self, sky_coord: SkyCoord, earth_location: EarthLocation):
+
         self.calculate_alt_az(sky_coord, earth_location)  # 1st
         self.calculate_drive_counts(sky_coord, earth_location)  # 2nd
 
     def calculate_alt_az(self, sky_coord: SkyCoord, earth_location: EarthLocation):
         transform = sky_coord.transform_to(AltAz(obstime=Time(datetime.utcnow(), scale='utc'), location=earth_location))
-        # ra_dec = sky_coord.transform_to(RADEC(obstime=Time(datetime.utcnow(), scale='utc'), location=earth_location))
         alt_dms = transform.alt.dms
         az_dms = transform.az.dms
 
@@ -89,17 +100,23 @@ class PythonToJavascriptData(PythonToDriveData, DriveToPythonData):
         self.ra_hour_decimal = Angle(sky_coord.ra).hour
         self.dec_deg_decimal = Angle(sky_coord.dec).degree
 
-        if self.ra_hour_decimal > self.local_sidereal > self.ra_hour_decimal - .1:
+        if self.ra_hour_decimal > self.local_sidereal > self.ra_hour_decimal - .1 and self.mount_select < 2:
             self.meridian = "Meridian Flip Soon"
         else:
             self.meridian = ""
 
     def calculate_drive_counts(self, sky_coord: SkyCoord, earth_location: EarthLocation):
+        global avg_counter, last_time_start, last_az_deg, last_alt_deg
+
         altitude_deg = self.altitude_deg_decimal
         azimuth_deg = self.azimuth_deg_decimal
         dec_decimal_deg = self.dec_deg_decimal
         ra_count = 0
         dec_count = 0
+        time_diff = 0
+        alt_diff = 0
+        az_diff = 0
+
         if self.soft_ra_adder is None:
             self.soft_ra_adder = 0
             self.soft_dec_adder = 0
@@ -140,7 +157,8 @@ class PythonToJavascriptData(PythonToDriveData, DriveToPythonData):
             if self.mount_select == 2:
                 ra_count = azimuth_deg / self.ra_or_az_pulse_per_deg
                 dec_count = altitude_deg / self.dec_or_alt_pulse_per_deg
-        else:
+
+        else:  # south
 
             if self.mount_select == 0:  # EQ south
                 ra_count = offset / self.ra_or_az_pulse_per_deg * -1
@@ -160,6 +178,36 @@ class PythonToJavascriptData(PythonToDriveData, DriveToPythonData):
             if self.mount_select == 2:
                 ra_count = (180 - azimuth_deg) / self.ra_or_az_pulse_per_deg * -1
                 dec_count = altitude_deg / self.dec_or_alt_pulse_per_deg
+
+        if self.mount_select < 2:  # Eq and Fork
+            self.dec_alt_osc_calc = 0
+            self.ra_az_osc_calc = int(((360/self.ra_or_az_pulse_per_deg) * 16) / 24 / 60 / 60)
+
+        if self.mount_select == 2:  # Alt Az
+            if self.dec_alt_osc_calc is None:
+                self.dec_alt_osc_calc = 5
+                self.ra_az_osc_calc = 5
+
+            if avg_counter == 0:
+                last_time_start = time() * 1000
+                last_az_deg = azimuth_deg
+                last_alt_deg = altitude_deg
+
+            avg_counter += 1
+            if avg_counter >= 20:
+                avg_counter = 0
+                time_diff = (time() * 1000) - last_time_start
+
+                az_diff = abs(azimuth_deg - last_az_deg)
+                alt_diff = abs(altitude_deg - last_alt_deg)
+                dec_alt = int((alt_diff / (time_diff / 1000) / self.dec_or_alt_pulse_per_deg) * 16)
+                self.dec_alt_osc_calc = int(dec_alt - (dec_alt * .05))
+                ra_az = int((az_diff / (time_diff / 1000) / self.ra_or_az_pulse_per_deg) * 16)
+                self.ra_az_osc_calc = int(ra_az - (ra_az * .05))
+
+            # print(' ')
+            # print("dec_alt_osc_calc ", self.dec_alt_osc_calc, " ra_az_osc_calc ", self.ra_az_osc_calc, ' time_diff ', time_diff)
+            # print(' ')
 
         self.az_ra_steps_sp = float("{:.3f}".format(ra_count + self.soft_ra_adder))
         self.alt_dec_steps_sp = float("{:.3f}".format(dec_count + self.soft_dec_adder))

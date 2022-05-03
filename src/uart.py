@@ -21,8 +21,8 @@ class UARTServer:
     def __del__(self):
         self.serial.close()
 
-    def send(self, az_steps_sp: float, alt_steps_sp: float, control_mode: int):
-        encode = f'{alt_steps_sp},{az_steps_sp},{control_mode}\n'.encode()
+    def send(self, az_steps_sp: float, alt_steps_sp: float, control_mode: int, ra_az_osc_calc: int, dec_alt_osc_calc: int):
+        encode = f'{alt_steps_sp},{az_steps_sp},{control_mode},{ra_az_osc_calc},{dec_alt_osc_calc}\n'.encode()
         self.serial.write(encode)
         self.last_send = time.time()
 
@@ -49,7 +49,9 @@ class UARTServer:
                     az_steps=columns[3],
                     az_steps_adder=columns[4],
                     az_diff=columns[5],
-                    drive_status=columns[6]
+                    drive_status=columns[6],
+                    az_osc_drive=columns[7],
+                    alt_osc_drive=columns[8]
                 ))
 
                 logging.debug(f'UART Model: {model}')
@@ -77,7 +79,9 @@ class UARTServer:
                 self.send(
                     self.tracker_data.base.az_ra_steps_sp,
                     self.tracker_data.base.alt_dec_steps_sp,
-                    self.tracker_data.base.control_mode
+                    self.tracker_data.base.control_mode,
+                    self.tracker_data.base.ra_az_osc_calc,
+                    self.tracker_data.base.dec_alt_osc_calc
                 )
 
             # TODO - Try to match all sleep timers across all devises

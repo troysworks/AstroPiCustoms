@@ -120,20 +120,7 @@ async def put_convert(celestial: CelestialObjectGroup, key: str):
     if sky_coord:
         tracker_data.sky_coord = sky_coord
         tracker_data.base.object_info += sky_coord.to_string('hmsdms')
-        tracker_data.base.custom_ra_hour = int(tracker_data.base.ra_hour_decimal)
-        tracker_data.base.custom_ra_min = int((tracker_data.base.ra_hour_decimal * 60) % 60)
-        tracker_data.base.custom_ra_sec = (tracker_data.base.ra_hour_decimal * 3600) % 60
 
-        dd = tracker_data.base.dec_deg_decimal
-        is_positive = dd >= 0
-        dd = abs(dd)
-        minutes, seconds = divmod(dd * 3600, 60)
-        degrees, minutes = divmod(minutes, 60)
-        degrees = degrees if is_positive else -degrees
-
-        tracker_data.base.custom_dec_deg = degrees
-        tracker_data.base.custom_dec_min = minutes
-        tracker_data.base.custom_dec_sec = seconds
         tracker_data.base.calculating = ""
 
         if not tracker_data.base.control_mode:
