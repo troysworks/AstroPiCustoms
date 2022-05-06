@@ -16,7 +16,6 @@
     * `wget -O - https://raw.githubusercontent.com/troysworks/AstroPiCustoms/main/setup.sh | bash`
 * Update the `config.json` (`~/AstroPiCustoms/config.json`) file to include your relevant information:
     
-    * Shows setup for Denver and my 8" Meade with fork mount and north hemisphere
     * Sydney Australia is:
     * "latitude": -33.86,
     * "longitude": 151.2,
@@ -26,6 +25,7 @@
     * "mount_select": 0=EQ 1=Fork 2=Alt/Az
     * "north_south_select": 0=North 1=South
     * Be very careful and watch the commas, quotation marks and spaces
+    * Shows setup for Denver and my 8" Meade with fork mount and north hemisphere
     ```javascript
       {
           "latitude": 39.89169776,
@@ -44,8 +44,8 @@
 * To manually Stop service (service will resume on restart)
     * `sudo systemctl stop astropicustoms`
 ---
-#### Run AstroPiCustoms Web Interface
-* `http://<<yourhostname>>/` on your PC or Phone
+#### Run AstroPiCustoms Web InterfaceS
+* `http://<<yourhostname>>/` on your Tablet, Laptop or PC
     * Example: http://astropidob12:8000
 ---
 For more details goto:
