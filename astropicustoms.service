@@ -9,7 +9,7 @@ Type=simple
 Restart=always
 RestartSec=10
 WorkingDirectory=/home/pi/AstroPiCustoms
-ExecStart=/home/pi/AstroPiCustoms/venv/bin/python /home/pi/AstroPiCustoms/astropicustoms.py
+ExecStart=/home/astroberry/AstroPiCustoms/venv/bin/python /home/astroberry/AstroPiCustoms/astropicustoms.py
 
 [Install]
 WantedBy=multi-user.target
