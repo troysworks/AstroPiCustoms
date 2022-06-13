@@ -1,5 +1,8 @@
-uvicorn
-astropy
-fastapi
-pyserial
+uvicorn~=0.16.0
+astropy~=4.3.1
+fastapi~=0.70.1
+pyserial~=3.5
 jinja2
+
+starlette~=0.16.0
+pydantic~=1.9.0
