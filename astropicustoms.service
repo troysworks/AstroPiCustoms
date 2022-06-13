@@ -8,7 +8,7 @@ StartLimitIntervalSec=300
 Type=simple
 Restart=always
 RestartSec=10
-WorkingDirectory=/home/pi/AstroPiCustoms
+WorkingDirectory=/home/astroberry/AstroPiCustoms
 ExecStart=/home/astroberry/AstroPiCustoms/venv/bin/python /home/astroberry/AstroPiCustoms/astropicustoms.py
 
 [Install]
