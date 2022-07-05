@@ -18,7 +18,7 @@ logging.debug('Starting Application')
 app = FastAPI()
 templates = Jinja2Templates(directory='src/templates')
 
-# TODO - Rethink these variables
+# Rethink these variables
 tracker_data = TrackerData()
 uart_server = UARTServer(tracker_data)
 tcp_socket = SocketServer(tracker_data, port=10760)
