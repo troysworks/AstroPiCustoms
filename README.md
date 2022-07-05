@@ -50,5 +50,5 @@ then follow the AstorPiCustoms Install below
 * `http://<<yourhostname>>/` on your Tablet, Laptop or PC
     * Example: http://astropidob12:8008 or http://astroberry:8008
 ---
-For more details goto:
+For more details goto: 
 #### http://www.troysworks.com
