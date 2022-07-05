@@ -51,4 +51,4 @@ then follow the AstorPiCustoms Install below
     * Example: http://astropidob12:8008 or http://astroberry:8008
 ---
 For more details goto: 
-#### http://www.troysworks.com
+#### http://www.troysworks.com 
