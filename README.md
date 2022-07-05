@@ -1,6 +1,8 @@
-# AstroPiCustoms
+# AstroPiCustoms with Astroberry
+Install Astroberry Server to the RPI first
+then follow the AstorPiCustoms Install below
 ---
-#### Raspberry Pi OS Setup:
+#### AstroPiCustoms stand-alone Raspberry Pi OS Setup:
 * Choose "Raspberry Pi OS with desktop" 
     https://www.raspberrypi.com/software/
 * Follow default install and set the following:
@@ -46,7 +48,7 @@
 ---
 #### Run AstroPiCustoms Web InterfaceS
 * `http://<<yourhostname>>/` on your Tablet, Laptop or PC
-    * Example: http://astropidob12:8000
+    * Example: http://astropidob12:8008 or http://astroberry:8008
 ---
 For more details goto:
 #### http://www.troysworks.com
