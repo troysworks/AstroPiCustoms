@@ -13,7 +13,7 @@ then follow the AstorPiCustoms Install below
     * Enable Serial Port
 ---
 #### AstorPiCustoms Install:
-* **_AstorPiCustoms should be installed on a fresh install of Raspberry OS_**
+* **_AstroPiCustoms should be installed on a fresh install of Raspberry OS_**
 * SSH into the fresh install and run the following command from a terminal: 
     * `wget -O - https://raw.githubusercontent.com/troysworks/AstroPiCustoms/main/setup.sh | bash`
 * Update the `config.json` (`~/AstroPiCustoms/config.json`) file to include your relevant information:
