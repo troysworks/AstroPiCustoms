@@ -2,12 +2,12 @@ import time
 
 from machine import Pin, UART, PWM, ADC
 
-# Astropi Customs 4-18-22
-# Meade 8 inch Alt Az
+# Astropi Customs 6-11-22
+# Meade 8 inch redo
 # stepper motors and 1/16 microstep for tracking
 # for raspberry pi pico
-# Ra drive uses 0.00074074 deg/count
-# Dec drive uses 0.00074074 deg/count
+# Ra drive uses 0.00333 deg/count
+# Dec drive uses 0.01875 deg/count
 # uart communication to/from raspberry pi for counts setpoint and modes
 # save as main.py on pico to auto run
 
@@ -54,7 +54,7 @@ class ControlProcess:
         self.dec_pwm = PWM(Pin(6))  # create PWM object from a pin
         self.dec_pwm.freq(30)  # set frequency
         self.dec_pwm.duty_u16(0)  # set duty cycle, range 0-65535
-        self.dec_counter = Pin(9, Pin.IN, Pin.PULL_DOWN)
+        self.dec_counter = Pin(9, Pin.IN, Pin.PULL_DOWN) # 9
         self.dec_counter.irq(trigger=Pin.IRQ_RISING, handler=self.dec_counter_callback)
         self.dec_dir_pin = Pin(8, Pin.OUT)
         self.dec_dir_pin.value(0)
@@ -70,7 +70,7 @@ class ControlProcess:
         self.ra_pwm = PWM(Pin(10))  # create PWM object from a pin
         self.ra_pwm.freq(30)  # set frequency
         self.ra_pwm.duty_u16(0)  # set duty cycle, range 0-65535
-        self.ra_counter = Pin(13, Pin.IN, Pin.PULL_DOWN)
+        self.ra_counter = Pin(13, Pin.IN, Pin.PULL_DOWN)  # 13
         self.ra_counter.irq(trigger=Pin.IRQ_RISING, handler=self.ra_counter_callback)
         self.ra_dir_pin = Pin(12, Pin.OUT)
         self.ra_dir_pin.value(0)
@@ -204,7 +204,7 @@ class ControlProcess:
                 status = "Slewing"
             if self.dec_diff < 25 and self.ra_diff < 25 and self.uart.control_mode == 2:
                 status = "Tracking"
-            if self.uart.dec_steps_sp == 0 and self.uart.dec_steps_sp == 0 and self.uart.control_mode == 2:
+            if self.uart.dec_steps_sp == 0 and self.uart.ra_steps_sp == 0 and self.uart.control_mode == 2:
                 status = "Slewing Home"
             if self.dec_diff < 5 and self.ra_diff < 5 and self.uart.dec_steps_sp == 0 and self.uart.dec_steps_sp == 0:
                 status = "Home Pos"
@@ -344,16 +344,16 @@ class ControlProcess:
 
             dec_diff_micro = self.dec_diff * 16
             #  Dec Tracking
-            if self.uart.dec_steps_sp == 0 and self.dec_diff < 2:
+            if self.uart.dec_steps_sp == 0 and self.dec_diff < 1:
                 self.dec_osc = 0
                 self.dec_drive(self.dec_osc, self.dec_control_dir, 0)
                 dec_step_mode = 'home'
 
             elif dec_diff_micro <= 2 or (self.dec_diff < 2 and self.dec_control_dir != self.dec_dir):
                 self.dec_speed_pin.value(1)  # slow
-                self.dec_osc = int(self.uart.dec_osc - (self.uart.dec_osc * .1))
-                self.dec_drive(self.dec_osc, self.dec_control_dir, self.duty50)
-                dec_step_mode = 'Slow'
+                self.dec_osc = 0  # int(self.uart.dec_osc - (self.uart.dec_osc * .5))
+                self.dec_drive(self.dec_osc, self.dec_control_dir, 0)
+                dec_step_mode = 'Stop'
 
             elif self.dec_diff > 10:
                 self.dec_speed_pin.value(0)  # fast
@@ -361,12 +361,12 @@ class ControlProcess:
                     self.dec_osc += 25
                 else:
                     self.dec_osc = int(self.dec_diff * 3)
-                if self.dec_osc > self.max_speed:
-                    self.dec_osc = self.max_speed
+                if self.dec_osc > self.max_speed / 4:
+                    self.dec_osc = int(self.max_speed / 4)
                 self.dec_drive(self.dec_osc, self.dec_dir, self.duty50)
                 dec_step_mode = 'Slewing'
 
-            elif dec_diff_micro > 1 and self.ra_diff < 5:
+            elif dec_diff_micro > 2 and self.ra_diff < 5:
                 self.dec_speed_pin.value(1)  # slow
                 if self.dec_control_dir:
                     if self.dec_control_sp >= self.dec_steps:  # Right
@@ -394,16 +394,16 @@ class ControlProcess:
 
             #  Ra Tracking
             ra_diff_micro = self.ra_diff * 16
-            if self.uart.ra_steps_sp == 0 and self.ra_diff < 2:
+            if self.uart.ra_steps_sp == 0 and self.ra_diff < 1:
                 self.ra_osc = 0
                 self.ra_drive(self.ra_osc, self.ra_control_dir, 0)
                 ra_step_mode = 'home'
 
             elif ra_diff_micro <= 2 or (self.ra_diff < 2 and self.ra_control_dir != self.ra_dir):
                 self.ra_speed_pin.value(1)  # slow
-                self.ra_osc = int(self.uart.ra_osc - (self.uart.ra_osc * .1))
-                self.ra_drive(self.ra_osc, self.ra_control_dir, self.duty50)
-                ra_step_mode = 'Slow'
+                self.ra_osc = 0  # int(self.uart.ra_osc - (self.uart.ra_osc * .5))
+                self.ra_drive(self.ra_osc, self.ra_control_dir, 0)
+                ra_step_mode = 'Stop'
 
             elif self.ra_diff > 10:  # slew
                 self.ra_speed_pin.value(0)  # fast
@@ -416,7 +416,7 @@ class ControlProcess:
                 self.ra_drive(self.ra_osc, self.ra_dir, self.duty50)
                 ra_step_mode = 'Slewing'
 
-            elif ra_diff_micro > 1 and self.dec_diff < 10:
+            elif ra_diff_micro > 2 and self.dec_diff < 10:
                 self.ra_speed_pin.value(1)  # slow
                 if self.ra_control_dir:
                     if self.ra_control_sp >= self.ra_steps:  # Right
@@ -442,8 +442,8 @@ class ControlProcess:
                         self.ra_drive(self.ra_osc, self.ra_control_dir, self.duty50)  # PWM
                         ra_step_mode = 'PWM left'
                         
-            print(' ra_osc ', self.ra_osc, 'ra_step_mode ', ra_step_mode, " ra_speed_pin ", self.ra_speed_pin.value())
-            print(' dec_osc ', self.dec_osc, 'dec_step_mode ', dec_step_mode, " dec_speed_pin ", self.dec_speed_pin.value())
+            print(' ra_osc ', self.ra_osc, 'ra_step_mode ', ra_step_mode, ' dec_osc ', self.dec_osc, 'dec_step_mode ', dec_step_mode)
+            # print(' dec_control_dir ', self.dec_control_dir, ' dec_dir ', self.dec_dir, ' dec_diff ', self.dec_diff, ' dec_osc ', self.dec_osc)
 
 
 class UARTProcess:

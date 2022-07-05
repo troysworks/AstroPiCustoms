@@ -1,7 +1,6 @@
 import logging
 import threading
 from datetime import datetime
-
 from astropy import units as u
 from astropy.coordinates import solar_system_ephemeris, SkyCoord, get_body, Angle
 from astropy.time import Time
@@ -9,18 +8,20 @@ from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from starlette import status
-
 from src.data import DataFile
-from src.models import PythonToJavascriptData, CelestialObjectGroup, TrackerData
+from src.models import PythonToJavascriptData, CelestialObjectGroup, TrackerData, Builder
 from src.uart import UARTServer
+from src.tcp import SocketServer
 
 logging.debug('Starting Application')
 
 app = FastAPI()
 templates = Jinja2Templates(directory='src/templates')
 
+# TODO - Rethink these variables
 tracker_data = TrackerData()
 uart_server = UARTServer(tracker_data)
+tcp_socket = SocketServer(tracker_data, port=10760)
 
 
 def update_tracker_data(update_data: PythonToJavascriptData):
@@ -44,7 +45,7 @@ def astro_form(request: Request):
 
 
 @app.get('/soft_adder/{button}/{scale}')
-async def soft_adder(button: str, scale: str):
+def soft_adder(button: str, scale: str):
     button = int(button)
     scale = float(scale)
     if not tracker_data.base.soft_ra_adder:
@@ -65,7 +66,7 @@ async def soft_adder(button: str, scale: str):
 
 
 @app.get('/convert/{celestial}/{key}')
-async def put_convert(celestial: CelestialObjectGroup, key: str):
+def put_convert(celestial: CelestialObjectGroup, key: str = None):
     sky_coord = None
     data = None
     tracker_data.base.object_info = ""
@@ -77,39 +78,35 @@ async def put_convert(celestial: CelestialObjectGroup, key: str):
         tracker_data.base.ra_hour_decimal = Angle(sky_coord.ra).hourangle
         tracker_data.base.dec_deg_decimal = float(sky_coord.dec.value)
         tracker_data.base.object_info = "Solar System " + key + " "
-        tracker_data.base.local_sidereal_start = 0
 
     elif celestial == CelestialObjectGroup.ngc:
         data = DataFile.get_ngc(key)
 
         tracker_data.base.object_info = "NGC " + key + " "
-        tracker_data.base.local_sidereal_start = 0
 
     elif celestial == CelestialObjectGroup.messer:
         data = DataFile.get_messer(key)
 
         tracker_data.base.object_info = "Messer " + key + " "
-        tracker_data.base.local_sidereal_start = 0
 
     elif celestial == CelestialObjectGroup.star:
         data = DataFile.get_star(key)
 
         tracker_data.base.object_info = "Star " + key + " "
-        tracker_data.base.local_sidereal_start = 0
 
     elif celestial == CelestialObjectGroup.custom:
         data = ""
-        tracker_data.base.ra_hour_decimal = tracker_data.base.custom_ra_hour + \
-                                            (tracker_data.base.custom_ra_min * 0.01666) + (
-                                                    tracker_data.base.custom_ra_sec * 0.0002778)
-        tracker_data.base.dec_deg_decimal = tracker_data.base.custom_dec_deg + \
-                                            (tracker_data.base.custom_dec_min * 0.01666) + (
-                                                    tracker_data.base.custom_dec_sec * 0.0002778)
+
+        if tracker_data.base.custom_ra_hour:
+            tracker_data.base.ra_hour_decimal = tracker_data.base.custom_ra_hour + \
+                                                (tracker_data.base.custom_ra_min * 0.01666) + (
+                                                        tracker_data.base.custom_ra_sec * 0.0002778)
+            tracker_data.base.dec_deg_decimal = tracker_data.base.custom_dec_deg + (tracker_data.base.custom_dec_min * 0.01666) + (tracker_data.base.custom_dec_sec * 0.0002778)
+
         sky_coord = SkyCoord(ra=tracker_data.base.ra_hour_decimal * u.hour,
                              dec=tracker_data.base.dec_deg_decimal * u.degree, frame='icrs')
 
         tracker_data.base.object_info = "Custom "
-        tracker_data.base.local_sidereal_start = 0
 
     if data:
         tracker_data.base.ra_hour_decimal = float(data['ra_hour_decimal'])
@@ -122,9 +119,8 @@ async def put_convert(celestial: CelestialObjectGroup, key: str):
         tracker_data.base.object_info += sky_coord.to_string('hmsdms')
 
         tracker_data.base.calculating = ""
+        tracker_data.base.new_start = False
 
-        if not tracker_data.base.control_mode:
-            tracker_data.base.control_mode = 0
         if tracker_data.sky_coord:
             tracker_data.base.calculate(tracker_data.sky_coord, tracker_data.earth_location)
         return tracker_data.base
@@ -132,13 +128,18 @@ async def put_convert(celestial: CelestialObjectGroup, key: str):
     raise status.HTTP_404_NOT_FOUND
 
 
+def move_custom():
+    print('hello')
+    put_convert(CelestialObjectGroup.custom)
+
+
 @app.get('/update_tracker', response_model=PythonToJavascriptData)
-async def get_update_tracker():
+def get_update_tracker():
     return tracker_data.base
 
 
 @app.post('/update_tracker', response_model=PythonToJavascriptData)
-async def post_update_tracker(results: PythonToJavascriptData = None):
+def post_update_tracker(results: PythonToJavascriptData = None):
     update_tracker_data(results)
     if tracker_data.sky_coord:
         tracker_data.base.calculate(tracker_data.sky_coord, tracker_data.earth_location)
@@ -147,5 +148,44 @@ async def post_update_tracker(results: PythonToJavascriptData = None):
 
 @app.on_event('startup')
 def startup():
-    thread = threading.Thread(target=uart_server.background_task)
-    thread.start()
+    tracker_data.base.az_steps = 0
+    tracker_data.base.alt_steps = 0
+    tracker_data.base.drive_deg_ra = 0
+    tracker_data.base.drive_deg_dec = 0
+    tracker_data.base.soft_ra_adder = 0
+    tracker_data.base.soft_dec_adder = 0
+    tracker_data.base.dec_alt_osc_calc = 5
+    tracker_data.base.ra_az_osc_calc = 5
+    tracker_data.base.drive_deg_alt = 0
+    tracker_data.base.drive_deg_az = 0
+
+    # Add initial tracker_data info before starting uart thread
+    tracker_data.base.control_mode = 1
+    earth_location = Builder.earth_location(tracker_data.base.latitude, tracker_data.base.longitude, tracker_data.base.sea_level)
+    sidereal = Time(datetime.utcnow(), scale='utc', location=earth_location).sidereal_time('mean')
+    tracker_data.base.local_sidereal = float(Angle(sidereal).hourangle)
+
+    if tracker_data.base.mount_select < 2:  # EQ - fork
+        if tracker_data.base.north_south_select == 0:  # north aline
+            tracker_data.base.dec_deg_decimal = 90
+            tracker_data.base.ra_hour_decimal = tracker_data.base.local_sidereal
+        else: # south aline
+            tracker_data.base.dec_deg_decimal = -90
+            tracker_data.base.ra_hour_decimal = tracker_data.base.local_sidereal
+
+    if tracker_data.base.mount_select == 2:  # alt az
+        if tracker_data.base.north_south_select == 0:  # north aline
+            tracker_data.base.dec_deg_decimal = 90 - tracker_data.base.latitude
+            tracker_data.base.ra_hour_decimal = tracker_data.base.local_sidereal
+        else:  # south aline
+            tracker_data.base.dec_deg_decimal = -90 - tracker_data.base.latitude
+            tracker_data.base.ra_hour_decimal = tracker_data.base.local_sidereal
+
+    put_convert(CelestialObjectGroup.custom)
+    tracker_data.base.new_start = True
+
+    uart_thread = threading.Thread(target=uart_server.background_task)
+    uart_thread.start()
+
+    socket_thread = threading.Thread(target=tcp_socket.background_task)
+    socket_thread.start()

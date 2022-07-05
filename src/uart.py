@@ -21,7 +21,8 @@ class UARTServer:
     def __del__(self):
         self.serial.close()
 
-    def send(self, az_steps_sp: float, alt_steps_sp: float, control_mode: int, ra_az_osc_calc: int, dec_alt_osc_calc: int):
+    def send(self, az_steps_sp: float, alt_steps_sp: float, control_mode: int, ra_az_osc_calc: int,
+             dec_alt_osc_calc: int):
         encode = f'{alt_steps_sp},{az_steps_sp},{control_mode},{ra_az_osc_calc},{dec_alt_osc_calc}\n'.encode()
         self.serial.write(encode)
         self.last_send = time.time()
@@ -39,7 +40,7 @@ class UARTServer:
             ]
             line = lines[-1]
             if line:
-                logging.debug(f'UART Server read raw: {line}')
+                # logging.debug(f'UART Server read raw: {line}')
                 columns = line.split(',')
 
                 model = DriveToPythonData(**dict(
@@ -54,7 +55,7 @@ class UARTServer:
                     alt_osc_drive=columns[8]
                 ))
 
-                logging.debug(f'UART Model: {model}')
+                # logging.debug(f'UART Model: {model}')
 
         self.serial.flush()
 

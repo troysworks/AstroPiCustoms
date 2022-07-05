@@ -209,7 +209,7 @@ class ControlProcess:
                 status = "Slewing"
             if self.dec_diff < 25 and self.ra_diff < 25 and self.uart.control_mode == 2:
                 status = "Tracking"
-            if self.uart.dec_steps_sp == 0 and self.uart.dec_steps_sp == 0 and self.uart.control_mode == 2:
+            if self.uart.dec_steps_sp == 0 and self.uart.ra_steps_sp == 0 and self.uart.control_mode == 2:
                 status = "Slewing Home"
             if self.dec_diff < 5 and self.ra_diff < 5 and self.uart.dec_steps_sp == 0 and self.uart.dec_steps_sp == 0:
                 status = "Home Pos"

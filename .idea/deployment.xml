@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" autoUpload="Always" serverName="pi@astropi8:22" remoteFilesAllowedToDisappearOnAutoupload="false">
+  <component name="PublishConfigData" autoUpload="Always" serverName="astroberry@astroberry:22" remoteFilesAllowedToDisappearOnAutoupload="false">
     <serverData>
       <paths name="Copy of project-level server 'pi@astropi'">
         <serverdata>
@@ -21,6 +21,26 @@
           <excludedPaths>
             <excludedPath local="true" path="$PROJECT_DIR$/.idea" />
             <excludedPath local="true" path="$PROJECT_DIR$/objectlists" />
+          </excludedPaths>
+        </serverdata>
+      </paths>
+      <paths name="astroberry@astro12">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/AstroPiCustoms" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+          <excludedPaths>
+            <excludedPath local="true" path="$PROJECT_DIR$/.idea" />
+          </excludedPaths>
+        </serverdata>
+      </paths>
+      <paths name="astroberry@astroberry:22">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/AstroPiCustoms" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+          <excludedPaths>
+            <excludedPath local="true" path="$PROJECT_DIR$/.idea" />
           </excludedPaths>
         </serverdata>
       </paths>
@@ -84,6 +104,13 @@
         </serverdata>
       </paths>
       <paths name="pi@cardbot:22">
+        <serverdata>
+          <mappings>
+            <mapping local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="pi@picam:22">
         <serverdata>
           <mappings>
             <mapping local="$PROJECT_DIR$" web="/" />
