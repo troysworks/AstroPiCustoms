@@ -8,13 +8,11 @@ from src.models import PythonToDriveData, DriveToPythonData, TrackerData
 
 SERIAL_PORT = '/dev/ttyS0'
 SERIAL_BAUD = 9600
-SEND_INTERVAL = .2  # seconds
 
 
 class UARTServer:
-    def __init__(self, tracker_data: TrackerData, port: str = None, baud: int = None, send_interval: int = None):
+    def __init__(self, tracker_data: TrackerData, port: str = None, baud: int = None):
         self.serial = Serial(port or SERIAL_PORT, baudrate=baud or SERIAL_BAUD)
-        self.send_interval = send_interval or SEND_INTERVAL
         self.last_send: float = time.time()
         self.tracker_data = tracker_data
 
@@ -22,10 +20,11 @@ class UARTServer:
         self.serial.close()
 
     def send(self, az_steps_sp: float, alt_steps_sp: float, control_mode: int, ra_az_osc_calc: int,
-             dec_alt_osc_calc: int):
-        encode = f'{alt_steps_sp},{az_steps_sp},{control_mode},{ra_az_osc_calc},{dec_alt_osc_calc}\n'.encode()
+             dec_alt_osc_calc: int, manual_move: str):
+        encode = f'{alt_steps_sp},{az_steps_sp},{control_mode},{ra_az_osc_calc},{dec_alt_osc_calc},{manual_move}\n'.encode()
         self.serial.write(encode)
         self.last_send = time.time()
+        # print('sent ', encode)
 
     def read(self) -> Optional[PythonToDriveData]:
         model = None
@@ -82,7 +81,8 @@ class UARTServer:
                     self.tracker_data.base.alt_dec_steps_sp,
                     self.tracker_data.base.control_mode,
                     self.tracker_data.base.ra_az_osc_calc,
-                    self.tracker_data.base.dec_alt_osc_calc
+                    self.tracker_data.base.dec_alt_osc_calc,
+                    self.tracker_data.base.manual_move
                 )
 
             # TODO - Try to match all sleep timers across all devises

@@ -104,6 +104,7 @@ class PythonToJavascriptData(PythonToDriveData, DriveToPythonData):
     drive_deg_dec: Optional[float]
     drive_deg_alt: Optional[float]
     drive_deg_az: Optional[float]
+    manual_move: Optional[str]
 
     def calculate(self, sky_coord: SkyCoord, earth_location: EarthLocation):
         self.calculate_alt_az(sky_coord, earth_location)  # 1st
@@ -237,22 +238,24 @@ class PythonToJavascriptData(PythonToDriveData, DriveToPythonData):
         if self.north_south_select == 0:  # north
 
             if self.mount_select == 0:  # EQ north
-                ra_count = self.diff_deg / self.ra_or_az_pulse_per_deg
-                self.drive_deg_ra = self.az_steps * self.ra_or_az_pulse_per_deg
                 if self.diff_deg < 0:  # east
+                    ra_count = (90 + self.diff_deg) * -1 / self.ra_or_az_pulse_per_deg
+                    self.drive_deg_ra = (90 + (self.ra_or_az_pulse_per_deg * self.az_steps)) * -1
                     dec_count = (90 - self.dec_deg_decimal) * -1 / self.dec_or_alt_pulse_per_deg
                     self.drive_deg_dec = 90 + (self.dec_or_alt_pulse_per_deg * self.alt_steps)
                 else:  # west
+                    ra_count = (90 - self.diff_deg) / self.ra_or_az_pulse_per_deg
+                    self.drive_deg_ra = 90 - (self.ra_or_az_pulse_per_deg * self.az_steps)
                     dec_count = (90 - self.dec_deg_decimal) / self.dec_or_alt_pulse_per_deg
                     self.drive_deg_dec = 90 - (self.dec_or_alt_pulse_per_deg * self.alt_steps)
 
             if self.mount_select == 1:  # Fork Mount north
-                if self.diff_deg >= 0:  # west
+                if self.diff_deg >= 0:  # looking east
                     ra_count = (180 - self.diff_deg) / self.ra_or_az_pulse_per_deg
                     self.drive_deg_ra = 180 - (self.ra_or_az_pulse_per_deg * self.az_steps)
-                else:
-                    ra_count = (180 - self.diff_deg) * -1 / self.ra_or_az_pulse_per_deg
-                    self.drive_deg_ra = 180 + (self.ra_or_az_pulse_per_deg * self.az_steps)
+                else:  # West
+                    ra_count = ((180 + self.diff_deg) / self.ra_or_az_pulse_per_deg) * -1
+                    self.drive_deg_ra = (180 + (self.ra_or_az_pulse_per_deg * self.az_steps)) * -1
                 dec_count = (90 - self.dec_deg_decimal) * -1 / self.dec_or_alt_pulse_per_deg
                 self.drive_deg_dec = 90 + (self.dec_or_alt_pulse_per_deg * self.alt_steps)
 
@@ -266,22 +269,28 @@ class PythonToJavascriptData(PythonToDriveData, DriveToPythonData):
         else:  # south
 
             if self.mount_select == 0:  # EQ south
-                ra_count = self.diff_deg / self.ra_or_az_pulse_per_deg * -1
-                self.drive_deg_ra = self.az_steps * self.ra_or_az_pulse_per_deg * -1
-                if self.diff_deg < 0:  # east
+                if self.diff_deg < 0:  # facing west
+                    ra_count = (90 + self.diff_deg) / self.ra_or_az_pulse_per_deg
+                    self.drive_deg_ra = (90 - (self.ra_or_az_pulse_per_deg * self.az_steps)) * -1
+                    if self.drive_deg_ra < -90:
+                        self.drive_deg_ra += 360
+
+                    dec_count = (90 + self.dec_deg_decimal) / self.dec_or_alt_pulse_per_deg
+                    self.drive_deg_dec = (90 - (self.dec_or_alt_pulse_per_deg * self.alt_steps)) * -1
+                else:  # east
+                    ra_count = (90 - self.diff_deg) / self.ra_or_az_pulse_per_deg * -1
+                    self.drive_deg_ra = 90 + (self.ra_or_az_pulse_per_deg * self.az_steps)
+
                     dec_count = (-90 - self.dec_deg_decimal) / self.dec_or_alt_pulse_per_deg
                     self.drive_deg_dec = (90 + (self.dec_or_alt_pulse_per_deg * self.alt_steps)) * -1
-                else:  # west
-                    dec_count = (-90 - self.dec_deg_decimal) * -1 / self.dec_or_alt_pulse_per_deg
-                    self.drive_deg_dec = -90 + (self.dec_or_alt_pulse_per_deg * self.alt_steps)
 
             if self.mount_select == 1:  # Fork Mount south
                 if self.diff_deg >= 0:
-                    ra_count = (180 - self.diff_deg) / self.ra_or_az_pulse_per_deg * -1
+                    ra_count = ((180 - self.diff_deg) / self.ra_or_az_pulse_per_deg) * -1
                     self.drive_deg_ra = 180 + (self.ra_or_az_pulse_per_deg * self.az_steps)
                 else:
-                    ra_count = (-180 + self.diff_deg) / self.ra_or_az_pulse_per_deg * -1
-                    self.drive_deg_ra = (-180 + (self.ra_or_az_pulse_per_deg * self.az_steps)) * -1
+                    ra_count = (180 + self.diff_deg) / self.ra_or_az_pulse_per_deg
+                    self.drive_deg_ra = (180 - (self.ra_or_az_pulse_per_deg * self.az_steps)) * -1
                 dec_count = (-90 - self.dec_deg_decimal) / self.dec_or_alt_pulse_per_deg
                 self.drive_deg_dec = (90 + (self.dec_or_alt_pulse_per_deg * self.alt_steps)) * -1
 

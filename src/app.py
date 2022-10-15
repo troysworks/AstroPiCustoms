@@ -44,27 +44,6 @@ def astro_form(request: Request):
     })
 
 
-@app.get('/soft_adder/{button}/{scale}')
-def soft_adder(button: str, scale: str):
-    button = int(button)
-    scale = float(scale)
-    if not tracker_data.base.soft_ra_adder:
-        tracker_data.base.soft_ra_adder = 0
-    if not tracker_data.base.soft_dec_adder:
-        tracker_data.base.soft_dec_adder = 0
-
-    if button == 0:
-        tracker_data.base.soft_ra_adder += scale / tracker_data.base.ra_or_az_pulse_per_deg
-    elif button == 1:
-        tracker_data.base.soft_ra_adder -= scale / tracker_data.base.ra_or_az_pulse_per_deg
-    elif button == 2:
-        tracker_data.base.soft_dec_adder += scale / tracker_data.base.dec_or_alt_pulse_per_deg
-    elif button == 3:
-        tracker_data.base.soft_dec_adder -= scale / tracker_data.base.dec_or_alt_pulse_per_deg
-
-    return tracker_data.base
-
-
 @app.get('/convert/{celestial}/{key}')
 def put_convert(celestial: CelestialObjectGroup, key: str = None):
     sky_coord = None
@@ -129,7 +108,6 @@ def put_convert(celestial: CelestialObjectGroup, key: str = None):
 
 
 def move_custom():
-    print('hello')
     put_convert(CelestialObjectGroup.custom)
 
 
@@ -158,6 +136,7 @@ def startup():
     tracker_data.base.ra_az_osc_calc = 5
     tracker_data.base.drive_deg_alt = 0
     tracker_data.base.drive_deg_az = 0
+    tracker_data.base.manual_move = '0_0'
 
     # Add initial tracker_data info before starting uart thread
     tracker_data.base.control_mode = 1

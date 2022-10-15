@@ -22,14 +22,7 @@
 <script TYPE="text/javascript">
     const loopMilliseconds = 1000;
     let loopInterval = null;
-    let alreadyRunning = false;
-    let train_stopping = false;
     let tracker_data = {
-        running: false,
-        drive_status: "",
-        altitude_deg_decimal: 0,
-        azimuth_deg_decimal: 0
-
     };
 
     function on_load() {
@@ -72,7 +65,7 @@
 
                     tracker_data = xmlHttpRequest.response;
                     update_tracker_form(xmlHttpRequest.response);
-                    alreadyRunning = false;
+                    // alreadyRunning = false;
                 }
             };
 
@@ -203,7 +196,7 @@
     function stop_loop() {
         clearInterval(loopInterval);
         loopInterval = null;
-        train_stopping = false;
+        // train_stopping = false;
     }
 
 
@@ -230,12 +223,39 @@
         });
     }
 
-    function manual_move(bnt) {
-        let element = document.getElementById('soft_adder_scale');
-        let soft_adder_scale = element.options[element.selectedIndex].text;
-        getJson("/soft_adder/" + bnt + "/" + soft_adder_scale);
+    // function manual_moves(bnt) {
+    //     let element = document.getElementById('soft_adder_scale');
+    //     let soft_adder_scale = element.options[element.selectedIndex].text;
+    //     getJson("/soft_adder/" + bnt + "/" + soft_adder_scale);
+    // }
+
+    function mtr_on(mtr) {
+        document.getElementById("b" + mtr).style.backgroundColor = "rgb(255,100,100)";
+        if (document.getElementById('speed_select0').checked === true) {
+            console.log(mtr + "_1");
+            tracker_data.manual_move = mtr + "_1";
+        }
+        if (document.getElementById('speed_select1').checked === true) {
+            console.log(mtr + "_2");
+            tracker_data.manual_move = mtr + "_2";
+        }
+        if (document.getElementById('speed_select2').checked === true) {
+            console.log(mtr + "_3");
+            tracker_data.manual_move = mtr + "_3";
+        }
+        postJson("/update_tracker", {
+            'manual_move': tracker_data.manual_move
+        });
     }
 
+    function mtr_off(mtr) {
+        document.getElementById("b" + mtr).style.backgroundColor = "rgb(226,197,197)";
+        console.log("0_0");
+        tracker_data.manual_move = "0_0";
+        postJson("/update_tracker", {
+            'manual_move': tracker_data.manual_move
+        });
+    }
  </script>
 
 <body onload="on_load()">
@@ -287,9 +307,9 @@
     </select>
     <button id="goto_star" onclick="goto_star()" style="font-size:16px;" type="button">Calc</button>
     <br>
-    <label style="font-size:18px;">Custom</label>
+    <label style="font-size:18px;">Custom Ra </label>
 
-
+    H:
     <input class="custom" id="custom_ra_hour_" max="23" min="0" name="custom_ra_hour" placeholder="00"
            style=" width: 60px;font-size:16px;"
            type="number"
@@ -304,7 +324,8 @@
            value="0">
     <br>
 
-    <label style="font-size:18px;">Dec(D):</label>
+    <label style="font-size:18px;">Dec </label>
+    D:
     <input class="custom" id="custom_dec_deg_" max="89" min="-89" name="custom_dec_deg" placeholder="00"
            style=" width: 60px;font-size:16px;" type="number"
            value="0">
@@ -324,7 +345,8 @@
     <label class="label" id="calculating" style="font-size:16px; background: chocolate"></label>
     <label class="label" id="meridian" style="font-size:16px; background: #d21e66"></label>
     <br>
-    <label style="font-size:16px;">Object Az(D):</label>
+    <label style="font-size:16px;">Object Az </label>
+    D:
     <label class="label" id="azimuth_deg" style="font-size:16px;">0</label>
     M:
     <label class="label" id="azimuth_min" style="font-size:16px;">0</label>
@@ -332,7 +354,8 @@
     <label class="label" id="azimuth_sec" style="font-size:16px;">0</label>
     Az Deg Dec:<label class="label" id="azimuth_deg_decimal" style="font-size:16px;">0.0</label>
     <br>
-    <label style="font-size:16px;">Alt(D):</label>
+    <label style="font-size:16px;">Alt </label>
+    D:
     <label class="label" id="altitude_deg" style="font-size:16px;">0</label>
     M:
     <label class="label" id="altitude_min" style="font-size:16px;">0</label>
@@ -373,22 +396,19 @@
     <br>
     <label style="font-size:16px;">----Manual Moves----</label>
     <br>
-    <button type="button" style="width:80px; height:30px; font-size: 24px" onclick="manual_move(0)">&#8678;Ra+</button>
-    <button type="button" style="width:80px; height:30px; font-size: 24px" onclick="manual_move(1)">&#8680;Ra-</button>
+    <button type="button" id="b2" style="background:rgb(226,197,197);width:80px; height:30px; font-size:24px" onmouseup="mtr_off(2)" onmousedown="mtr_on(2)">&#8678;Ra-</button>
+    <button type="button" id="b1" style="background:rgb(226,197,197);width:80px; height:30px; font-size:24px" onmouseup="mtr_off(1)" onmousedown="mtr_on(1)">&#8680;Ra+</button>
     <br>
     <br>
-    <button type="button" style="width:80px; height:30px; font-size: 24px" onclick="manual_move(2)">&#8679;Dec+</button>
-    <button type="button" style="width:80px; height:30px; font-size: 24px" onclick="manual_move(3)">&#8681;Dec-</button>
+    <button type="button" id="b4" style="background:rgb(226,197,197);width:80px; height:30px; font-size:24px" onmouseup="mtr_off(4)" onmousedown="mtr_on(4)">&#8681;Dec-</button>
+    <button type="button" id="b3" style="background:rgb(226,197,197);width:80px; height:30px; font-size:24px" onmouseup="mtr_off(3)" onmousedown="mtr_on(3)">&#8679;Dec+</button>
+
+     <br>
+    Speed
+    <input checked id="speed_select0" name="speed_select" type="radio">X2
+    <input id="speed_select1" name="speed_select" type="radio"> X4
+    <input id="speed_select2" name="speed_select" type="radio"> X8
     <br>
-    <br>
-    <label style="font-size:16px;">Deg-Movement</label>
-    <select aria-label=".01" class="form-select" id="soft_adder_scale" style="font-size:24px;">
-    <option>.01</option>
-    <option>.05</option>
-    <option>.1</option>
-    <option>.5</option>
-    <option>1</option>
-    </select>
 </div>
 </body>
 </html>

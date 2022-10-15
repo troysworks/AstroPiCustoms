@@ -1,0 +1,9 @@
+{
+  "latitude": -33.86,
+  "longitude": 151.2,
+  "sea_level": 58,
+  "ra_or_az_pulse_per_deg": 0.00333,
+  "dec_or_alt_pulse_per_deg": 0.01875,
+  "mount_select": 1,
+  "north_south_select": 1
+}

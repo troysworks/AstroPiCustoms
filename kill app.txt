@@ -1,0 +1,14 @@
+sshShow shell history:
+history
+
+Show App status:
+sudo systemctl status astropicustoms
+
+Stop App:
+sudo systemctl stop astropicustoms
+
+Search for Python Apps:
+sudo ps -ef | grep python
+
+Kill python App:
+sudo kill -9 REPLACE_THIS_WITH_THE_PYTHON_PID_FROM_ABOVE
